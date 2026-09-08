@@ -1,1 +1,39 @@
-spring.application.name=cash
+server:
+  port: 8083
+
+spring:
+  application:
+    name: cash
+  cloud:
+    consul:
+      host: localhost
+      port: 8500
+      discovery:
+        service-name: cash
+      config:
+        enabled: true
+        defaultContext: application
+        prefixes: config
+
+  security:
+    oauth2:
+      resource-server:
+        jwt:
+          issuer-uri: http://localhost:8080/realms/master
+      client:
+        provider:
+          keycloak:
+            token-uri: http://localhost:8080/realms/master/protocol/openid-connect/token
+        registration:
+          service-client:
+            authorizationGrantType: client_credentials
+            provider: keycloak
+            client-id: cash-service
+            client-secret: ZTF26gIc846BAtUD1wZDnCy5U2tyIuSS
+#            client-secret: ${KEYCLOAK_CASH_CLIENT_SECRET}
+            scope: internal
+
+logging:
+  level:
+    root: info
+    ru.practicum: debug
