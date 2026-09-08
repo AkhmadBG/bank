@@ -1,1 +1,30 @@
-spring.application.name=notifications
+server:
+  port: 8085
+
+spring:
+  application:
+    name: notifications
+  cloud:
+    consul:
+      host: localhost
+      port: 8500
+      discovery:
+        service-name: notifications
+      config:
+        enabled: true
+        defaultContext: application
+        prefixes: config
+
+  security:
+    oauth2:
+      resource-server:
+        jwt:
+          issuer-uri: http://localhost:8080/realms/master
+
+  liquibase:
+    change-log: classpath:db/changelog/db.changelog-master.yaml
+
+logging:
+  level:
+    root: info
+    ru.practicum: debug
