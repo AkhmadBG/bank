@@ -1,1 +1,46 @@
-spring.application.name=front
+server:
+  port: 8086
+
+spring:
+  application:
+    name: front
+  cloud:
+    consul:
+      host: localhost
+      port: 8500
+      discovery:
+        service-name: front
+      config:
+        enabled: true
+        defaultContext: application
+        prefixes: config
+
+  security:
+    oauth2:
+      client:
+        provider:
+          keycloak:
+            authorization-uri: http://localhost:8080/realms/master/protocol/openid-connect/auth
+            token-uri: http://localhost:8080/realms/master/protocol/openid-connect/token
+            jwk-set-uri: http://localhost:8080/realms/master/protocol/openid-connect/certs
+        registration:
+          keycloak:
+            authorizationGrantType: authorization_code
+            provider: keycloak
+            client-id: front
+            client-secret: IsuUYuvbIg8rRNsHNZ6sCzXZzRb9D9j1
+#            client-secret: ${KEYCLOAK_CLIENT_SECRET}
+            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+            scope: openid, profile, email
+
+
+logging:
+  level:
+    root: debug
+    org:
+      zalando:
+        logbook: debug
+    org.springframework: debug
+    ru.yandex.practicum.market: debug
+    org.springframework.boot.autoconfigure.liquibase: info
+    liquibase: info
