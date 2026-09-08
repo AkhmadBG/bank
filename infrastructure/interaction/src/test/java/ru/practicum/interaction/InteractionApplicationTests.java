@@ -1,10 +1,10 @@
-//package ru.practicum.transfer;
+//package ru.practicum.interaction;
 //
 //import org.junit.jupiter.api.Test;
 //import org.springframework.boot.test.context.SpringBootTest;
 //
 //@SpringBootTest
-//class TransferApplicationTests {
+//class InteractionApplicationTests {
 //
 //    @Test
 //    void contextLoads() {
