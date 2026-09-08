@@ -1,1 +1,44 @@
-spring.application.name=accounts
+server:
+  port: 8082
+
+spring:
+  application:
+    name: accounts
+  cloud:
+    consul:
+      host: localhost
+      port: 8500
+      discovery:
+        service-name: accounts
+      config:
+        enabled: true
+        defaultContext: application
+        prefixes: config
+
+  security:
+    oauth2:
+      resource-server:
+        jwt:
+          issuer-uri: http://localhost:8080/realms/master
+      client:
+        provider:
+          keycloak:
+            authorization-uri: http://localhost:8080/realms/master/protocol/openid-connect/auth
+            token-uri: http://localhost:8080/realms/master/protocol/openid-connect/token
+            jwk-set-uri: http://localhost:8080/realms/master/protocol/openid-connect/certs
+        registration:
+          notifications-client:
+            authorizationGrantType: client_credentials
+            provider: keycloak
+            client-id: accounts-service
+            client-secret: 0hFd7t2gLn0jheRYIuiHOAI6ZVqwuBSu
+#            client-secret: ${KEYCLOAK_ACCOUNTS_CLIENT_SECRET}
+            scope: internal
+
+logging:
+  level:
+    root: info
+    org.springframework: info
+    ru.practicum: debug
+    org.springframework.boot.autoconfigure.liquibase: info
+    liquibase: info
