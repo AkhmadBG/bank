@@ -2,6 +2,8 @@ server:
   port: 8083
 
 spring:
+  config:
+    import: "optional:consul:"
   application:
     name: cash
   cloud:
@@ -19,18 +21,17 @@ spring:
     oauth2:
       resource-server:
         jwt:
-          issuer-uri: http://localhost:8080/realms/master
+          issuer-uri: http://localhost:8080/realms/bank
       client:
         provider:
           keycloak:
-            token-uri: http://localhost:8080/realms/master/protocol/openid-connect/token
+            token-uri: http://localhost:8080/realms/bank/protocol/openid-connect/token
         registration:
           service-client:
             authorizationGrantType: client_credentials
             provider: keycloak
             client-id: cash-service
             client-secret: ZTF26gIc846BAtUD1wZDnCy5U2tyIuSS
-#            client-secret: ${KEYCLOAK_CASH_CLIENT_SECRET}
             scope: internal
 
 logging:

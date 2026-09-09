@@ -2,6 +2,8 @@ server:
   port: 8084
 
 spring:
+  config:
+    import: "optional:consul:"
   application:
     name: transfer
   cloud:
@@ -19,18 +21,17 @@ spring:
     oauth2:
       resource-server:
         jwt:
-          issuer-uri: http://localhost:8080/realms/master
+          issuer-uri: http://localhost:8080/realms/bank
       client:
         provider:
           keycloak:
-            token-uri: http://localhost:8080/realms/master/protocol/openid-connect/token
+            token-uri: http://localhost:8080/realms/bank/protocol/openid-connect/token
         registration:
           service-client:
             authorizationGrantType: client_credentials
             provider: keycloak
             client-id: transfer-service
             client-secret: 5uTr3jD2Kxzx1kBndipRszZwYZ6V8ub5
-#            client-secret: ${KEYCLOAK_TRANSFER_CLIENT_SECRET}
             scope: internal
 
 logging:

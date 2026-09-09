@@ -2,6 +2,8 @@ server:
   port: 8086
 
 spring:
+  config:
+    import: "optional:consul:"
   application:
     name: front
   cloud:
@@ -20,22 +22,23 @@ spring:
       client:
         provider:
           keycloak:
-            authorization-uri: http://localhost:8080/realms/master/protocol/openid-connect/auth
-            token-uri: http://localhost:8080/realms/master/protocol/openid-connect/token
-            jwk-set-uri: http://localhost:8080/realms/master/protocol/openid-connect/certs
+            authorization-uri: http://localhost:8080/realms/bank/protocol/openid-connect/auth
+            token-uri: http://localhost:8080/realms/bank/protocol/openid-connect/token
+            jwk-set-uri: http://localhost:8080/realms/bank/protocol/openid-connect/certs
         registration:
           keycloak:
             authorizationGrantType: authorization_code
             provider: keycloak
             client-id: front
-            client-secret: IsuUYuvbIg8rRNsHNZ6sCzXZzRb9D9j1
 #            client-secret: ${KEYCLOAK_CLIENT_SECRET}
+            client-secret: Pnw2GZpfg4h2CLv74848OKhZvhtzlucp
             redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
             scope: openid, profile, email
 
 
 logging:
   level:
+    org.springframework.security.oauth2: debug
     root: debug
     org:
       zalando:
