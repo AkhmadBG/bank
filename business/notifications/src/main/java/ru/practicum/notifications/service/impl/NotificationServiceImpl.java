@@ -1,6 +1,7 @@
 package ru.practicum.notifications.service.impl;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.notifications.entity.Notification;
@@ -10,6 +11,7 @@ import ru.practicum.interaction.notification.dto.NotificationRequest;
 
 import java.time.LocalDateTime;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class NotificationServiceImpl implements NotificationService {
@@ -19,6 +21,8 @@ public class NotificationServiceImpl implements NotificationService {
     @Override
     @Transactional
     public void sendNotification(NotificationRequest request) {
+        log.info("Уведомление для {}: {}", request.recipient(), request.description());
+
         Notification notification = Notification.builder()
                 .recipient(request.recipient())
                 .description(request.description())

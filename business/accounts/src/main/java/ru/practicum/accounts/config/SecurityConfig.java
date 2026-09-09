@@ -5,10 +5,14 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.CsrfConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
+import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.web.SecurityFilterChain;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -28,15 +32,16 @@ public class SecurityConfig {
                 .oauth2ResourceServer(customizer -> customizer
                         .jwt(jwtCustomizer -> {
                             JwtAuthenticationConverter authConverter = new JwtAuthenticationConverter();
+                            JwtGrantedAuthoritiesConverter defaultConverter = new JwtGrantedAuthoritiesConverter();
 
                             authConverter.setJwtGrantedAuthoritiesConverter(jwt -> {
+                                Collection<GrantedAuthority> authorities = new ArrayList<>(defaultConverter.convert(jwt));
+
                                 List<String> roles = jwt.getClaimAsStringList("roles");
-                                if (roles == null) {
-                                    return List.of();
+                                if (roles != null) {
+                                    roles.stream().map(SimpleGrantedAuthority::new).forEach(authorities::add);
                                 }
-                                return roles.stream()
-                                        .map(SimpleGrantedAuthority::new)
-                                        .collect(Collectors.toList());
+                                return authorities;
                             });
 
                             jwtCustomizer.jwtAuthenticationConverter(authConverter);
