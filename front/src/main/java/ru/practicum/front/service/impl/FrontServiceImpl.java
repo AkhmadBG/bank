@@ -86,4 +86,5 @@ public class FrontServiceImpl implements FrontService {
             return new ResultData(null, null, null, List.of(), List.of("Не удалось загрузить данные аккаунта"), null);
         }
     }
+
 }

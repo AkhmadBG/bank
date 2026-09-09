@@ -34,4 +34,5 @@ public class CashOperation {
 
     @Column(name = "operation_date_time", nullable = false)
     private LocalDateTime operationDateTime;
+
 }

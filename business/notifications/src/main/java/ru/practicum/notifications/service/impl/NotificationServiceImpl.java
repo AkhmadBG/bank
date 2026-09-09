@@ -4,10 +4,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.practicum.interaction.notification.dto.NotificationRequest;
 import ru.practicum.notifications.entity.Notification;
 import ru.practicum.notifications.repository.NotificationRepository;
 import ru.practicum.notifications.service.NotificationService;
-import ru.practicum.interaction.notification.dto.NotificationRequest;
 
 import java.time.LocalDateTime;
 

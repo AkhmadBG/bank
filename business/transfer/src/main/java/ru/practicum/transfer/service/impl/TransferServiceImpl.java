@@ -8,11 +8,11 @@ import ru.practicum.interaction.account.dto.InternalTransferRequest;
 import ru.practicum.interaction.feignclient.NotificationFeignClient;
 import ru.practicum.interaction.notification.dto.NotificationRequest;
 import ru.practicum.interaction.transfer.dto.TransferOperationRequest;
+import ru.practicum.transfer.config.CurrentUserProvider;
 import ru.practicum.transfer.entity.TransferOperation;
 import ru.practicum.transfer.exception.SelfTransferException;
 import ru.practicum.transfer.feignclient.AccountInternalFeignClient;
 import ru.practicum.transfer.repository.TransferOperationRepository;
-import ru.practicum.transfer.config.CurrentUserProvider;
 import ru.practicum.transfer.service.TransferService;
 
 import java.time.LocalDateTime;

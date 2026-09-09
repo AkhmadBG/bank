@@ -10,4 +10,5 @@ public record NotificationRequest(
         @NotBlank
         String description
 
-) {}
+) {
+}

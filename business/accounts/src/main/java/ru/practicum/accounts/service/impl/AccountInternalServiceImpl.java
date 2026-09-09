@@ -33,8 +33,6 @@ public class AccountInternalServiceImpl implements AccountInternalService {
     @Override
     @Transactional
     public void transferBalance(InternalTransferRequest request) {
-        // Блокируем оба счёта в детерминированном порядке (по login),
-        // чтобы встречные переводы не привели к deadlock на уровне БД
         String first = request.loginSender().compareTo(request.loginRecipient()) < 0
                 ? request.loginSender() : request.loginRecipient();
         String second = request.loginSender().compareTo(request.loginRecipient()) < 0

@@ -4,12 +4,12 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.practicum.accounts.config.CurrentUserProvider;
 import ru.practicum.accounts.entity.Account;
 import ru.practicum.accounts.exception.AccountNotFoundException;
 import ru.practicum.accounts.exception.InvalidAgeException;
 import ru.practicum.accounts.mapper.AccountMapper;
 import ru.practicum.accounts.repository.AccountRepository;
-import ru.practicum.accounts.config.CurrentUserProvider;
 import ru.practicum.accounts.service.AccountService;
 import ru.practicum.interaction.account.dto.EditAccountRequest;
 import ru.practicum.interaction.account.dto.UserAccountDto;
@@ -21,12 +21,12 @@ import java.time.LocalDate;
 import java.time.Period;
 import java.util.List;
 
+import static ru.practicum.interaction.util.ApplicationConstant.MIN_AGE;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class AccountServiceImpl implements AccountService {
-
-    private static final int MIN_AGE = 18;
 
     private final AccountRepository accountRepository;
     private final AccountMapper accountMapper;

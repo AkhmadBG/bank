@@ -2,7 +2,6 @@ package ru.practicum.front.exception;
 
 import feign.Response;
 import feign.codec.ErrorDecoder;
-import org.springframework.context.annotation.Bean;
 import ru.practicum.interaction.exception.ApiError;
 import tools.jackson.databind.ObjectMapper;
 

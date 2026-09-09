@@ -19,7 +19,8 @@ public class SecurityConfig {
                         .requestMatchers("/actuator/health/**").permitAll()
                         .anyRequest().authenticated()
                 )
-                .oauth2ResourceServer(customizer -> customizer.jwt(jwt -> {}))
+                .oauth2ResourceServer(customizer -> customizer.jwt(jwt -> {
+                }))
                 .build();
     }
 

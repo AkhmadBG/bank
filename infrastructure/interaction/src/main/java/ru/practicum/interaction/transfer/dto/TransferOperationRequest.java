@@ -15,4 +15,5 @@ public record TransferOperationRequest(
         @Positive
         BigDecimal amount
 
-) {}
+) {
+}

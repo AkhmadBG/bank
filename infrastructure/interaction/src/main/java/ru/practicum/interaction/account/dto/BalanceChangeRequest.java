@@ -12,4 +12,5 @@ public record BalanceChangeRequest(
 
         BigDecimal amount
 
-) {}
+) {
+}
