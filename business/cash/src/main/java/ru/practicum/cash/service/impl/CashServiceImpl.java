@@ -1,0 +1,76 @@
+package ru.practicum.cash.service.impl;
+
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import ru.practicum.cash.config.CurrentUserProvider;
+import ru.practicum.cash.entity.CashOperation;
+import ru.practicum.cash.feignclient.AccountInternalFeignClient;
+import ru.practicum.cash.repository.CashOperationRepository;
+import ru.practicum.cash.service.CashService;
+import ru.practicum.interaction.account.dto.BalanceChangeRequest;
+import ru.practicum.interaction.cash.dto.CashOperationRequest;
+import ru.practicum.interaction.cash.enums.CashAction;
+import ru.practicum.interaction.feignclient.NotificationFeignClient;
+import ru.practicum.interaction.notification.dto.NotificationRequest;
+
+import java.time.LocalDateTime;
+
+@Slf4j
+@Service
+@RequiredArgsConstructor
+public class CashServiceImpl implements CashService {
+
+    private final AccountInternalFeignClient accountInternalFeignClient;
+    private final NotificationFeignClient notificationFeignClient;
+    private final CashOperationRepository cashOperationRepository;
+    private final CurrentUserProvider currentUserProvider;
+
+    @Override
+    public void cashOperation(CashOperationRequest request) {
+        String login = currentUserProvider.getCurrentLogin();
+
+        changeBalance(login, request);
+
+        persistOperation(login, request);
+
+        sendNotificationBestEffort(login, request);
+    }
+
+    @CircuitBreaker(name = "accounts")
+    @Retry(name = "accounts")
+    protected void changeBalance(String login, CashOperationRequest request) {
+        accountInternalFeignClient.changeBalance(
+                new BalanceChangeRequest(login, request.cashAction(), request.amount())
+        );
+    }
+
+    @Transactional
+    protected void persistOperation(String login, CashOperationRequest request) {
+        CashOperation operation = CashOperation.builder()
+                .login(login)
+                .cashOperationType(request.cashAction())
+                .amount(request.amount())
+                .operationDateTime(LocalDateTime.now())
+                .build();
+
+        cashOperationRepository.save(operation);
+    }
+
+    @CircuitBreaker(name = "notifications", fallbackMethod = "notificationFallback")
+    protected void sendNotificationBestEffort(String login, CashOperationRequest request) {
+        String description = request.cashAction() == CashAction.PUT
+                ? "Пополнение счёта на " + request.amount()
+                : "Снятие со счёта " + request.amount();
+
+        notificationFeignClient.sendNotification(new NotificationRequest(login, description));
+    }
+
+    private void notificationFallback(String login, CashOperationRequest request, Throwable t) {
+        log.warn("Не удалось отправить уведомление для {}: {}", login, t.getMessage());
+    }
+
+}

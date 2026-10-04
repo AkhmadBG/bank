@@ -1,0 +1,71 @@
+server:
+  port: 8084
+
+spring:
+  config:
+    import: "optional:consul:"
+  application:
+    name: transfer
+  liquibase:
+    enabled: true
+    change-log: classpath:db/changelog/db.changelog-master.yaml
+  cloud:
+    consul:
+      host: localhost
+      port: 8500
+      discovery:
+        service-name: transfer
+      config:
+        enabled: true
+        defaultContext: application
+        prefixes: config
+
+  security:
+    oauth2:
+      resource-server:
+        jwt:
+          issuer-uri: http://localhost:8080/realms/bank
+      client:
+        provider:
+          keycloak:
+            token-uri: http://localhost:8080/realms/bank/protocol/openid-connect/token
+        registration:
+          service-client:
+            authorizationGrantType: client_credentials
+            provider: keycloak
+            client-id: transfer-service
+#            client-secret: ${KEYCLOAK_TRANSFER_CLIENT_SECRET}
+            client-secret: PYtSUAbgQq5ljGaQYktElzZxqxPBo7hE
+            scope: internal
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      accounts:
+        sliding-window-size: 10
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 10s
+        permitted-number-of-calls-in-half-open-state: 3
+      notifications:
+        sliding-window-size: 10
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 15s
+  retry:
+    instances:
+      accounts:
+        max-attempts: 3
+        wait-duration: 500ms
+      notifications:
+        max-attempts: 2
+        wait-duration: 300ms
+  timelimiter:
+    instances:
+      accounts:
+        timeout-duration: 3s
+      notifications:
+        timeout-duration: 2s
+
+logging:
+  level:
+    root: info
+    ru.practicum: debug

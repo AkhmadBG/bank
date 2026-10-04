@@ -1,0 +1,30 @@
+server:
+  port: 8081
+
+spring:
+  config:
+    import: "optional:consul:"
+  application:
+    name: gateway
+  cloud:
+    consul:
+      host: localhost
+      port: 8500
+      discovery:
+        service-name: gateway
+      config:
+        enabled: true
+        defaultContext: application
+        prefixes: config
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,mappings
+
+logging:
+  level:
+    org.springframework.cloud.gateway: DEBUG
+    org.springframework.web.servlet.function: DEBUG
+    org.springframework.cloud.gateway.server.mvc: DEBUG

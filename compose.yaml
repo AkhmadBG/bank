@@ -1,0 +1,210 @@
+services:
+
+  postgres-account:
+    image: postgres:16.1
+    container_name: account_db
+    restart: always
+    environment:
+      POSTGRES_DB: account
+      POSTGRES_USER: account
+      POSTGRES_PASSWORD: account
+    volumes:
+      - account:/var/lib/postgresql/data
+    ports:
+      - "5431:5432"
+
+  postgres-cash:
+    image: postgres:16.1
+    container_name: cash_db
+    restart: always
+    environment:
+      POSTGRES_DB: cash
+      POSTGRES_USER: cash
+      POSTGRES_PASSWORD: cash
+    volumes:
+      - cash:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  postgres-notification:
+    image: postgres:16.1
+    container_name: notification_db
+    restart: always
+    environment:
+      POSTGRES_DB: notification
+      POSTGRES_USER: notification
+      POSTGRES_PASSWORD: notification
+    volumes:
+      - notification:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+
+  postgres-transfer:
+    image: postgres:16.1
+    container_name: transfer_db
+    restart: always
+    environment:
+      POSTGRES_DB: transfer
+      POSTGRES_USER: transfer
+      POSTGRES_PASSWORD: transfer
+    volumes:
+      - transfer:/var/lib/postgresql/data
+    ports:
+      - "5434:5432"
+
+  consul:
+    image: consul:1.15.4
+    container_name: consul
+    restart: always
+    volumes:
+      - consul:/var/lib/consul/data
+    ports:
+      - "8500:8500"
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.1.3
+    container_name: keycloak
+    restart: always
+    command: start-dev
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+    volumes:
+      - keycloak:/var/lib/keycloak/data
+    ports:
+      - "8080:8080"
+
+  gateway:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      args:
+        JAR_FILE: infrastructure/gateway/target/gateway-0.0.1-SNAPSHOT.jar
+    container_name: gateway
+    restart: always
+    depends_on:
+      - consul
+    environment:
+      SPRING_CLOUD_CONSUL_HOST: consul
+    ports:
+      - "8081:8081"
+
+  front:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      args:
+        JAR_FILE: front/target/front-0.0.1-SNAPSHOT.jar
+    container_name: front
+    restart: always
+    depends_on:
+      - consul
+      - keycloak
+      - gateway
+    environment:
+      SPRING_CLOUD_CONSUL_HOST: consul
+      SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_AUTHORIZATION-URI: http://keycloak:8080/realms/bank/protocol/openid-connect/auth
+      SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_TOKEN-URI: http://keycloak:8080/realms/bank/protocol/openid-connect/token
+      SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_JWK-SET-URI: http://keycloak:8080/realms/bank/protocol/openid-connect/certs
+      SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_KEYCLOAK_CLIENT-SECRET: ${KEYCLOAK_FRONT_CLIENT_SECRET}
+    ports:
+      - "8086:8086"
+
+  accounts:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      args:
+        JAR_FILE: business/accounts/target/accounts-0.0.1-SNAPSHOT.jar
+    container_name: accounts
+    restart: always
+    depends_on:
+      - consul
+      - keycloak
+      - postgres-account
+    environment:
+      SPRING_CLOUD_CONSUL_HOST: consul
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-account:5432/account
+      SPRING_DATASOURCE_USERNAME: account
+      SPRING_DATASOURCE_PASSWORD: account
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER-URI: http://keycloak:8080/realms/bank
+      SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_TOKEN-URI: http://keycloak:8080/realms/bank/protocol/openid-connect/token
+      SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_NOTIFICATIONS-CLIENT_CLIENT-SECRET: ${KEYCLOAK_ACCOUNTS_CLIENT_SECRET}
+
+    ports:
+      - "8082:8082"
+
+  cash:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      args:
+        JAR_FILE: business/cash/target/cash-0.0.1-SNAPSHOT.jar
+    container_name: cash
+    restart: always
+    depends_on:
+      - consul
+      - keycloak
+      - postgres-cash
+    environment:
+      SPRING_CLOUD_CONSUL_HOST: consul
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-cash:5432/cash
+      SPRING_DATASOURCE_USERNAME: cash
+      SPRING_DATASOURCE_PASSWORD: cash
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER-URI: http://keycloak:8080/realms/bank
+      SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_TOKEN-URI: http://keycloak:8080/realms/bank/protocol/openid-connect/token
+      SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_SERVICE-CLIENT_CLIENT-SECRET: ${KEYCLOAK_CASH_CLIENT_SECRET}
+    ports:
+      - "8083:8083"
+
+  transfer:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      args:
+        JAR_FILE: business/transfer/target/transfer-0.0.1-SNAPSHOT.jar
+    container_name: transfer
+    restart: always
+    depends_on:
+      - consul
+      - keycloak
+      - postgres-transfer
+    environment:
+      SPRING_CLOUD_CONSUL_HOST: consul
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-transfer:5432/transfer
+      SPRING_DATASOURCE_USERNAME: transfer
+      SPRING_DATASOURCE_PASSWORD: transfer
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER-URI: http://keycloak:8080/realms/bank
+      SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_TOKEN-URI: http://keycloak:8080/realms/bank/protocol/openid-connect/token
+      SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_SERVICE-CLIENT_CLIENT-SECRET: ${KEYCLOAK_TRANSFER_CLIENT_SECRET}
+    ports:
+      - "8084:8084"
+
+  notifications:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      args:
+        JAR_FILE: business/notifications/target/notifications-0.0.1-SNAPSHOT.jar
+    container_name: notifications
+    restart: always
+    depends_on:
+      - consul
+      - keycloak
+      - postgres-notification
+    environment:
+      SPRING_CLOUD_CONSUL_HOST: consul
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-notification:5432/notification
+      SPRING_DATASOURCE_USERNAME: notification
+      SPRING_DATASOURCE_PASSWORD: notification
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER-URI: http://keycloak:8080/realms/bank
+    ports:
+      - "8085:8085"
+
+volumes:
+  account:
+  cash:
+  notification:
+  transfer:
+  consul:
+  keycloak:

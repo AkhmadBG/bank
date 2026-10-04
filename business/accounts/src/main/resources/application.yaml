@@ -1,0 +1,65 @@
+server:
+  port: 8082
+
+spring:
+  config:
+    import: "optional:consul:"
+  application:
+    name: accounts
+  liquibase:
+    enabled: true
+    change-log: classpath:db/changelog/db.changelog-master.yaml
+  cloud:
+    consul:
+      host: localhost
+      port: 8500
+      discovery:
+        service-name: accounts
+      config:
+        enabled: true
+        defaultContext: application
+        prefixes: config
+  security:
+    oauth2:
+      resource-server:
+        jwt:
+          issuer-uri: http://localhost:8080/realms/bank
+      client:
+        provider:
+          keycloak:
+            authorization-uri: http://localhost:8080/realms/bank/protocol/openid-connect/auth
+            token-uri: http://localhost:8080/realms/bank/protocol/openid-connect/token
+            jwk-set-uri: http://localhost:8080/realms/bank/protocol/openid-connect/certs
+        registration:
+          notifications-client:
+            authorizationGrantType: client_credentials
+            provider: keycloak
+            client-id: accounts-service
+            #            client-secret: ${KEYCLOAK_ACCOUNTS_CLIENT_SECRET}
+            client-secret: zSWsffubr7kR9R7lnZjfiA5CItKPURFL
+            scope: internal
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      notifications:
+        sliding-window-size: 10
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 15s
+  retry:
+    instances:
+      notifications:
+        max-attempts: 2
+        wait-duration: 300ms
+  timelimiter:
+    instances:
+      notifications:
+        timeout-duration: 2s
+
+logging:
+  level:
+    root: info
+    org.springframework: info
+    ru.practicum: debug
+    org.springframework.boot.autoconfigure.liquibase: info
+    liquibase: info

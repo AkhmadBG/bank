@@ -1,0 +1,31 @@
+server:
+  port: 8085
+
+spring:
+  config:
+    import: "optional:consul:"
+  application:
+    name: notifications
+  liquibase:
+    enabled: true
+    change-log: classpath:db/changelog/db.changelog-master.yaml
+  cloud:
+    consul:
+      host: localhost
+      port: 8500
+      discovery:
+        service-name: notifications
+      config:
+        enabled: true
+        defaultContext: application
+        prefixes: config
+  security:
+    oauth2:
+      resource-server:
+        jwt:
+          issuer-uri: http://localhost:8080/realms/bank
+
+logging:
+  level:
+    root: info
+    ru.practicum: debug
