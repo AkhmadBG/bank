@@ -1,5 +1,7 @@
 package ru.practicum.transfer.service.impl;
 
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -35,12 +37,20 @@ public class TransferServiceImpl implements TransferService {
             throw new SelfTransferException();
         }
 
+        transferBalance(senderLogin, request);
+
+        persistOperation(senderLogin, request);
+
+        notifySender(senderLogin, request);
+        notifyRecipient(senderLogin, request);
+    }
+
+    @CircuitBreaker(name = "accounts")
+    @Retry(name = "accounts")
+    protected void transferBalance(String senderLogin, TransferOperationRequest request) {
         accountInternalFeignClient.transferBalance(
                 new InternalTransferRequest(senderLogin, request.loginRecipient(), request.amount())
         );
-
-        persistOperation(senderLogin, request);
-        sendNotificationBestEffort(senderLogin, request);
     }
 
     @Transactional
@@ -55,20 +65,24 @@ public class TransferServiceImpl implements TransferService {
         transferOperationRepository.save(operation);
     }
 
-    private void sendNotificationBestEffort(String senderLogin, TransferOperationRequest request) {
-        try {
-            notificationFeignClient.sendNotification(new NotificationRequest(
-                    senderLogin, "Перевод получателю " + request.loginRecipient() + " на сумму " + request.amount()));
-        } catch (Exception e) {
-            log.warn("Не удалось отправить уведомление отправителю {}: {}", senderLogin, e.getMessage());
-        }
+    @CircuitBreaker(name = "notifications", fallbackMethod = "notifySenderFallback")
+    protected void notifySender(String senderLogin, TransferOperationRequest request) {
+        notificationFeignClient.sendNotification(new NotificationRequest(
+                senderLogin, "Перевод получателю " + request.loginRecipient() + " на сумму " + request.amount()));
+    }
 
-        try {
-            notificationFeignClient.sendNotification(new NotificationRequest(
-                    request.loginRecipient(), "Получен перевод от " + senderLogin + " на сумму " + request.amount()));
-        } catch (Exception e) {
-            log.warn("Не удалось отправить уведомление получателю {}: {}", request.loginRecipient(), e.getMessage());
-        }
+    private void notifySenderFallback(String senderLogin, TransferOperationRequest request, Throwable t) {
+        log.warn("Не удалось отправить уведомление отправителю {}: {}", senderLogin, t.getMessage());
+    }
+
+    @CircuitBreaker(name = "notifications", fallbackMethod = "notifyRecipientFallback")
+    protected void notifyRecipient(String senderLogin, TransferOperationRequest request) {
+        notificationFeignClient.sendNotification(new NotificationRequest(
+                request.loginRecipient(), "Получен перевод от " + senderLogin + " на сумму " + request.amount()));
+    }
+
+    private void notifyRecipientFallback(String senderLogin, TransferOperationRequest request, Throwable t) {
+        log.warn("Не удалось отправить уведомление получателю {}: {}", request.loginRecipient(), t.getMessage());
     }
 
 }

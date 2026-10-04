@@ -1,5 +1,7 @@
 package ru.practicum.cash.service.impl;
 
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -31,13 +33,19 @@ public class CashServiceImpl implements CashService {
     public void cashOperation(CashOperationRequest request) {
         String login = currentUserProvider.getCurrentLogin();
 
-        accountInternalFeignClient.changeBalance(
-                new BalanceChangeRequest(login, request.cashAction(), request.amount())
-        );
+        changeBalance(login, request);
 
         persistOperation(login, request);
 
         sendNotificationBestEffort(login, request);
+    }
+
+    @CircuitBreaker(name = "accounts")
+    @Retry(name = "accounts")
+    protected void changeBalance(String login, CashOperationRequest request) {
+        accountInternalFeignClient.changeBalance(
+                new BalanceChangeRequest(login, request.cashAction(), request.amount())
+        );
     }
 
     @Transactional
@@ -52,16 +60,17 @@ public class CashServiceImpl implements CashService {
         cashOperationRepository.save(operation);
     }
 
-    private void sendNotificationBestEffort(String login, CashOperationRequest request) {
-        try {
-            String description = request.cashAction() == CashAction.PUT
-                    ? "Пополнение счёта на " + request.amount()
-                    : "Снятие со счёта " + request.amount();
+    @CircuitBreaker(name = "notifications", fallbackMethod = "notificationFallback")
+    protected void sendNotificationBestEffort(String login, CashOperationRequest request) {
+        String description = request.cashAction() == CashAction.PUT
+                ? "Пополнение счёта на " + request.amount()
+                : "Снятие со счёта " + request.amount();
 
-            notificationFeignClient.sendNotification(new NotificationRequest(login, description));
-        } catch (Exception e) {
-            log.warn("Не удалось отправить уведомление для {}: {}", login, e.getMessage());
-        }
+        notificationFeignClient.sendNotification(new NotificationRequest(login, description));
+    }
+
+    private void notificationFallback(String login, CashOperationRequest request, Throwable t) {
+        log.warn("Не удалось отправить уведомление для {}: {}", login, t.getMessage());
     }
 
 }

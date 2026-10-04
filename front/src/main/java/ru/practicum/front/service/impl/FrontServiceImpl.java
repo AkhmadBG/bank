@@ -1,6 +1,8 @@
 package ru.practicum.front.service.impl;
 
 import feign.FeignException;
+import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -38,14 +40,19 @@ public class FrontServiceImpl implements FrontService {
         String error = null;
         String info = null;
         try {
-            accountFeignClient.editAccount(new EditAccountRequest(name, birthdate));
+            doEditAccount(name, birthdate);
             info = "Данные сохранены";
         } catch (BankOperationException e) {
             error = e.getMessage();
-        } catch (FeignException e) {
+        } catch (FeignException | CallNotPermittedException e) {
             error = "Сервис аккаунтов временно недоступен";
         }
         return fetchCurrentState(error, info);
+    }
+
+    @CircuitBreaker(name = "gateway")
+    protected void doEditAccount(String name, LocalDate birthdate) {
+        accountFeignClient.editAccount(new EditAccountRequest(name, birthdate));
     }
 
     @Override
@@ -53,14 +60,19 @@ public class FrontServiceImpl implements FrontService {
         String error = null;
         String info = null;
         try {
-            cashFeignClient.cashOperation(new CashOperationRequest(action, BigDecimal.valueOf(value)));
+            doCashOperation(action, value);
             info = action == CashAction.PUT ? "Счёт пополнен" : "Средства сняты";
         } catch (BankOperationException e) {
             error = e.getMessage();
-        } catch (FeignException e) {
+        } catch (FeignException | CallNotPermittedException e) {
             error = "Сервис обналичивания временно недоступен";
         }
         return fetchCurrentState(error, info);
+    }
+
+    @CircuitBreaker(name = "gateway")
+    protected void doCashOperation(CashAction action, int value) {
+        cashFeignClient.cashOperation(new CashOperationRequest(action, BigDecimal.valueOf(value)));
     }
 
     @Override
@@ -68,20 +80,30 @@ public class FrontServiceImpl implements FrontService {
         String error = null;
         String info = null;
         try {
-            transferFeignClient.transferOperation(
-                    new TransferOperationRequest(recipientAccountLogin, BigDecimal.valueOf(value)));
+            doTransfer(value, recipientAccountLogin);
             info = "Перевод выполнен";
         } catch (BankOperationException e) {
             error = e.getMessage();
-        } catch (FeignException e) {
+        } catch (FeignException | CallNotPermittedException e) {
             error = "Сервис переводов временно недоступен";
         }
         return fetchCurrentState(error, info);
     }
 
+    @CircuitBreaker(name = "gateway")
+    protected void doTransfer(int value, String recipientAccountLogin) {
+        transferFeignClient.transferOperation(
+                new TransferOperationRequest(recipientAccountLogin, BigDecimal.valueOf(value)));
+    }
+
+    @CircuitBreaker(name = "gateway")
+    protected ResultData fetchAccount() {
+        return accountFeignClient.getAccount().getBody();
+    }
+
     private ResultData fetchCurrentState(String error, String info) {
         try {
-            ResultData fresh = accountFeignClient.getAccount().getBody();
+            ResultData fresh = fetchAccount();
             List<String> errors = error != null ? List.of(error) : null;
             return new ResultData(fresh.name(), fresh.birthdate(), fresh.sum(), fresh.accounts(), errors, info);
         } catch (Exception e) {

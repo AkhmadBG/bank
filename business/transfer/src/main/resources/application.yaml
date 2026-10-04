@@ -38,6 +38,33 @@ spring:
             client-secret: PYtSUAbgQq5ljGaQYktElzZxqxPBo7hE
             scope: internal
 
+resilience4j:
+  circuitbreaker:
+    instances:
+      accounts:
+        sliding-window-size: 10
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 10s
+        permitted-number-of-calls-in-half-open-state: 3
+      notifications:
+        sliding-window-size: 10
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 15s
+  retry:
+    instances:
+      accounts:
+        max-attempts: 3
+        wait-duration: 500ms
+      notifications:
+        max-attempts: 2
+        wait-duration: 300ms
+  timelimiter:
+    instances:
+      accounts:
+        timeout-duration: 3s
+      notifications:
+        timeout-duration: 2s
+
 logging:
   level:
     root: info

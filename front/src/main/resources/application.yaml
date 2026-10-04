@@ -16,7 +16,6 @@ spring:
         enabled: true
         defaultContext: application
         prefixes: config
-
   security:
     oauth2:
       client:
@@ -35,6 +34,17 @@ spring:
             redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
             scope: openid, profile, email
 
+resilience4j:
+  circuitbreaker:
+    instances:
+      gateway:
+        sliding-window-size: 10
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 10s
+  timelimiter:
+    instances:
+      gateway:
+        timeout-duration: 3s
 
 logging:
   level:
