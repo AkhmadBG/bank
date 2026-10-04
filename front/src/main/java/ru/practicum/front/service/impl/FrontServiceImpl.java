@@ -2,6 +2,7 @@ package ru.practicum.front.service.impl;
 
 import feign.FeignException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import ru.practicum.front.exception.BankOperationException;
 import ru.practicum.front.feignclient.GatewayAccountFeignClient;
@@ -18,6 +19,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class FrontServiceImpl implements FrontService {
@@ -83,6 +85,7 @@ public class FrontServiceImpl implements FrontService {
             List<String> errors = error != null ? List.of(error) : null;
             return new ResultData(fresh.name(), fresh.birthdate(), fresh.sum(), fresh.accounts(), errors, info);
         } catch (Exception e) {
+            log.error("Не удалось получить данные аккаунта", e);
             return new ResultData(null, null, null, List.of(), List.of("Не удалось загрузить данные аккаунта"), null);
         }
     }

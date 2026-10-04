@@ -103,9 +103,9 @@ services:
       - gateway
     environment:
       SPRING_CLOUD_CONSUL_HOST: consul
-      SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_AUTHORIZATION-URI: http://keycloak:8080/realms/master/protocol/openid-connect/auth
-      SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_TOKEN-URI: http://keycloak:8080/realms/master/protocol/openid-connect/token
-      SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_JWK-SET-URI: http://keycloak:8080/realms/master/protocol/openid-connect/certs
+      SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_AUTHORIZATION-URI: http://keycloak:8080/realms/bank/protocol/openid-connect/auth
+      SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_TOKEN-URI: http://keycloak:8080/realms/bank/protocol/openid-connect/token
+      SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_JWK-SET-URI: http://keycloak:8080/realms/bank/protocol/openid-connect/certs
       SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_KEYCLOAK_CLIENT-SECRET: ${KEYCLOAK_FRONT_CLIENT_SECRET}
     ports:
       - "8086:8086"
@@ -127,9 +127,10 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-account:5432/account
       SPRING_DATASOURCE_USERNAME: account
       SPRING_DATASOURCE_PASSWORD: account
-      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER-URI: http://keycloak:8080/realms/master
-      SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_TOKEN-URI: http://keycloak:8080/realms/master/protocol/openid-connect/token
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER-URI: http://keycloak:8080/realms/bank
+      SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_TOKEN-URI: http://keycloak:8080/realms/bank/protocol/openid-connect/token
       SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_NOTIFICATIONS-CLIENT_CLIENT-SECRET: ${KEYCLOAK_ACCOUNTS_CLIENT_SECRET}
+
     ports:
       - "8082:8082"
 
@@ -150,8 +151,8 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-cash:5432/cash
       SPRING_DATASOURCE_USERNAME: cash
       SPRING_DATASOURCE_PASSWORD: cash
-      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER-URI: http://keycloak:8080/realms/master
-      SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_TOKEN-URI: http://keycloak:8080/realms/master/protocol/openid-connect/token
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER-URI: http://keycloak:8080/realms/bank
+      SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_TOKEN-URI: http://keycloak:8080/realms/bank/protocol/openid-connect/token
       SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_SERVICE-CLIENT_CLIENT-SECRET: ${KEYCLOAK_CASH_CLIENT_SECRET}
     ports:
       - "8083:8083"
@@ -173,8 +174,8 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-transfer:5432/transfer
       SPRING_DATASOURCE_USERNAME: transfer
       SPRING_DATASOURCE_PASSWORD: transfer
-      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER-URI: http://keycloak:8080/realms/master
-      SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_TOKEN-URI: http://keycloak:8080/realms/master/protocol/openid-connect/token
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER-URI: http://keycloak:8080/realms/bank
+      SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_TOKEN-URI: http://keycloak:8080/realms/bank/protocol/openid-connect/token
       SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_SERVICE-CLIENT_CLIENT-SECRET: ${KEYCLOAK_TRANSFER_CLIENT_SECRET}
     ports:
       - "8084:8084"
@@ -196,7 +197,7 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-notification:5432/notification
       SPRING_DATASOURCE_USERNAME: notification
       SPRING_DATASOURCE_PASSWORD: notification
-      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER-URI: http://keycloak:8080/realms/master
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER-URI: http://keycloak:8080/realms/bank
     ports:
       - "8085:8085"
 

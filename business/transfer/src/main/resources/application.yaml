@@ -6,6 +6,9 @@ spring:
     import: "optional:consul:"
   application:
     name: transfer
+  liquibase:
+    enabled: true
+    change-log: classpath:db/changelog/db.changelog-master.yaml
   cloud:
     consul:
       host: localhost
@@ -31,7 +34,8 @@ spring:
             authorizationGrantType: client_credentials
             provider: keycloak
             client-id: transfer-service
-            client-secret: 5uTr3jD2Kxzx1kBndipRszZwYZ6V8ub5
+#            client-secret: ${KEYCLOAK_TRANSFER_CLIENT_SECRET}
+            client-secret: PYtSUAbgQq5ljGaQYktElzZxqxPBo7hE
             scope: internal
 
 logging:

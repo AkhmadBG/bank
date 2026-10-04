@@ -6,6 +6,9 @@ spring:
     import: "optional:consul:"
   application:
     name: cash
+  liquibase:
+    enabled: true
+    change-log: classpath:db/changelog/db.changelog-master.yaml
   cloud:
     consul:
       host: localhost
@@ -31,7 +34,8 @@ spring:
             authorizationGrantType: client_credentials
             provider: keycloak
             client-id: cash-service
-            client-secret: ZTF26gIc846BAtUD1wZDnCy5U2tyIuSS
+#            client-secret: ${KEYCLOAK_CASH_CLIENT_SECRET}
+            client-secret: 2Bw5T63L8ZdrxP3CpUYoYWxmTgKXr2Wc
             scope: internal
 
 logging:
