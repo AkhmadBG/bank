@@ -6,6 +6,9 @@ spring:
     import: "optional:consul:"
   application:
     name: notifications
+  liquibase:
+    enabled: true
+    change-log: classpath:db/changelog/db.changelog-master.yaml
   cloud:
     consul:
       host: localhost
@@ -16,15 +19,11 @@ spring:
         enabled: true
         defaultContext: application
         prefixes: config
-
   security:
     oauth2:
       resource-server:
         jwt:
           issuer-uri: http://localhost:8080/realms/bank
-
-  liquibase:
-    change-log: classpath:db/changelog/db.changelog-master.yaml
 
 logging:
   level:

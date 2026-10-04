@@ -6,4 +6,5 @@ public record UserAccountDto(
 
         String name
 
-) {}
+) {
+}

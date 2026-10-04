@@ -36,4 +36,5 @@ public class GatewayRoutesConfig {
                 .filter(lb("transfer"))
                 .build();
     }
+
 }
