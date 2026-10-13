@@ -77,7 +77,7 @@ services:
   gateway:
     build:
       context: .
-      dockerfile: docker/Dockerfile
+      dockerfile: Dockerfile
       args:
         JAR_FILE: infrastructure/gateway/target/gateway-0.0.1-SNAPSHOT.jar
     container_name: gateway
@@ -92,7 +92,7 @@ services:
   front:
     build:
       context: .
-      dockerfile: docker/Dockerfile
+      dockerfile: Dockerfile
       args:
         JAR_FILE: front/target/front-0.0.1-SNAPSHOT.jar
     container_name: front
@@ -113,7 +113,7 @@ services:
   accounts:
     build:
       context: .
-      dockerfile: docker/Dockerfile
+      dockerfile: Dockerfile
       args:
         JAR_FILE: business/accounts/target/accounts-0.0.1-SNAPSHOT.jar
     container_name: accounts
@@ -137,7 +137,7 @@ services:
   cash:
     build:
       context: .
-      dockerfile: docker/Dockerfile
+      dockerfile: Dockerfile
       args:
         JAR_FILE: business/cash/target/cash-0.0.1-SNAPSHOT.jar
     container_name: cash
@@ -160,7 +160,7 @@ services:
   transfer:
     build:
       context: .
-      dockerfile: docker/Dockerfile
+      dockerfile: Dockerfile
       args:
         JAR_FILE: business/transfer/target/transfer-0.0.1-SNAPSHOT.jar
     container_name: transfer
@@ -183,7 +183,7 @@ services:
   notifications:
     build:
       context: .
-      dockerfile: docker/Dockerfile
+      dockerfile: Dockerfile
       args:
         JAR_FILE: business/notifications/target/notifications-0.0.1-SNAPSHOT.jar
     container_name: notifications

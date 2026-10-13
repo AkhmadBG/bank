@@ -4,6 +4,11 @@ import org.springframework.cloud.openfeign.FeignClient;
 import ru.practicum.cash.exception.AccountCallErrorDecoderConfig;
 import ru.practicum.interaction.apiinterface.AccountInternalOperations;
 
-@FeignClient(name = "accounts", contextId = "accountInternalClient", configuration = AccountCallErrorDecoderConfig.class)
+@FeignClient(
+        name = "accounts",
+        url = "${services.accounts.url:http://accounts:8082}",
+        contextId = "accountInternalClient",
+        configuration = AccountCallErrorDecoderConfig.class
+)
 public interface AccountInternalFeignClient extends AccountInternalOperations {
 }

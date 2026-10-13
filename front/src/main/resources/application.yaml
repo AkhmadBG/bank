@@ -2,20 +2,8 @@ server:
   port: 8086
 
 spring:
-  config:
-    import: "optional:consul:"
   application:
     name: front
-  cloud:
-    consul:
-      host: localhost
-      port: 8500
-      discovery:
-        service-name: front
-      config:
-        enabled: true
-        defaultContext: application
-        prefixes: config
   security:
     oauth2:
       client:
