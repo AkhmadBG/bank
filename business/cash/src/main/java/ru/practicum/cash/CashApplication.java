@@ -6,7 +6,6 @@ import org.springframework.cloud.openfeign.EnableFeignClients;
 
 @EnableFeignClients(basePackages = {
         "ru.practicum.interaction",
-        "ru.practicum.cash"
 })
 @SpringBootApplication
 public class CashApplication {

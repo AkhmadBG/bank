@@ -1,4 +1,4 @@
-package ru.practicum.transfer.exception;
+package ru.practicum.interaction.exception;
 
 import feign.Response;
 import feign.codec.ErrorDecoder;

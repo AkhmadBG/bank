@@ -1,4 +1,4 @@
-package ru.practicum.transfer.exception;
+package ru.practicum.interaction.exception;
 
 import org.springframework.http.HttpStatusCode;
 

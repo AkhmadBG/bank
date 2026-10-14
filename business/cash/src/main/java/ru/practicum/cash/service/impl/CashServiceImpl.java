@@ -8,12 +8,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.cash.config.CurrentUserProvider;
 import ru.practicum.cash.entity.CashOperation;
-import ru.practicum.cash.feignclient.AccountInternalFeignClient;
 import ru.practicum.cash.repository.CashOperationRepository;
 import ru.practicum.cash.service.CashService;
 import ru.practicum.interaction.account.dto.BalanceChangeRequest;
 import ru.practicum.interaction.cash.dto.CashOperationRequest;
 import ru.practicum.interaction.cash.enums.CashAction;
+import ru.practicum.interaction.feignclient.AccountInternalFeignClient;
 import ru.practicum.interaction.feignclient.NotificationFeignClient;
 import ru.practicum.interaction.notification.dto.NotificationRequest;
 

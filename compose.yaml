@@ -60,6 +60,10 @@ services:
     environment:
       KC_BOOTSTRAP_ADMIN_USERNAME: admin
       KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+      KEYCLOAK_FRONT_CLIENT_SECRET: ${KEYCLOAK_FRONT_CLIENT_SECRET}
+      KEYCLOAK_ACCOUNTS_CLIENT_SECRET: ${KEYCLOAK_ACCOUNTS_CLIENT_SECRET}
+      KEYCLOAK_CASH_CLIENT_SECRET: ${KEYCLOAK_CASH_CLIENT_SECRET}
+      KEYCLOAK_TRANSFER_CLIENT_SECRET: ${KEYCLOAK_TRANSFER_CLIENT_SECRET}
     volumes:
       - keycloak:/opt/keycloak/data
       - ./bank-realm.json:/opt/keycloak/data/import/bank-realm.json:ro
