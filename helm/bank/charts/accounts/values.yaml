@@ -11,10 +11,6 @@ service:
 
 containerPort: 8082
 
-consul:
-  host: consul
-  port: 8500
-
 database:
   host: postgres-account
   port: 5432

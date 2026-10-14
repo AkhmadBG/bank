@@ -46,4 +46,5 @@ public class GatewayRoutesConfig {
                         "services.transfer.url", "http://transfer:8084")))
                 .build();
     }
+
 }

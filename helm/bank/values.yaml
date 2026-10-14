@@ -33,6 +33,3 @@ postgres-transfer:
 
 postgres-notification:
   enabled: true
-
-consul:
-  enabled: true

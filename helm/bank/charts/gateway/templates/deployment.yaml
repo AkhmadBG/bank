@@ -21,8 +21,3 @@ spec:
           ports:
             - name: http
               containerPort: {{ .Values.containerPort }}
-          env:
-            - name: SPRING_CLOUD_CONSUL_HOST
-              value: {{ .Values.consul.host | quote }}
-            - name: SPRING_CLOUD_CONSUL_PORT
-              value: {{ .Values.consul.port | quote }}

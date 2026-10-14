@@ -32,8 +32,5 @@ dependencies:
 - name: postgres-notification
   repository: file://charts/postgres-notification
   version: 0.1.0
-- name: consul
-  repository: file://charts/consul
-  version: 0.1.0
 digest: sha256:88bba594413c756e7ee8b86aa6b0d445cf9a2364c0e4c9614dd97cbaa318a1e4
 generated: "2026-10-14T10:01:31.9849643+03:00"

@@ -22,10 +22,6 @@ spec:
             - name: http
               containerPort: {{ .Values.containerPort }}
           env:
-            - name: SPRING_CLOUD_CONSUL_HOST
-              value: {{ .Values.consul.host | quote }}
-            - name: SPRING_CLOUD_CONSUL_PORT
-              value: {{ .Values.consul.port | quote }}
             - name: SPRING_DATASOURCE_URL
               value: "jdbc:postgresql://{{ .Values.database.host }}:{{ .Values.database.port }}/{{ .Values.database.name }}"
             - name: SPRING_DATASOURCE_USERNAME
