@@ -21,8 +21,7 @@ spring:
             authorizationGrantType: client_credentials
             provider: keycloak
             client-id: transfer-service
-#            client-secret: ${KEYCLOAK_TRANSFER_CLIENT_SECRET}
-            client-secret: PYtSUAbgQq5ljGaQYktElzZxqxPBo7hE
+            client-secret: ${KEYCLOAK_TRANSFER_CLIENT_SECRET}
             scope: internal
 
 resilience4j:

@@ -1,0 +1,38 @@
+global:
+  imagePullPolicy: IfNotPresent
+
+front:
+  enabled: true
+
+gateway:
+  enabled: true
+
+accounts:
+  enabled: true
+
+cash:
+  enabled: true
+
+transfer:
+  enabled: true
+
+notifications:
+  enabled: true
+
+keycloak:
+  enabled: true
+
+postgres-account:
+  enabled: true
+
+postgres-cash:
+  enabled: true
+
+postgres-transfer:
+  enabled: true
+
+postgres-notification:
+  enabled: true
+
+consul:
+  enabled: true

@@ -17,8 +17,7 @@ spring:
             authorizationGrantType: authorization_code
             provider: keycloak
             client-id: front
-#            client-secret: ${KEYCLOAK_FRONT_CLIENT_SECRET}
-            client-secret: 1VHNPDi3FUI5Zpn1MJWdppYCbs8WeDul
+            client-secret: ${KEYCLOAK_FRONT_CLIENT_SECRET}
             redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
             scope: openid, profile, email
 

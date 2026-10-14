@@ -23,8 +23,7 @@ spring:
             authorizationGrantType: client_credentials
             provider: keycloak
             client-id: accounts-service
-            #            client-secret: ${KEYCLOAK_ACCOUNTS_CLIENT_SECRET}
-            client-secret: zSWsffubr7kR9R7lnZjfiA5CItKPURFL
+            client-secret: ${KEYCLOAK_ACCOUNTS_CLIENT_SECRET}
             scope: internal
 
 resilience4j:
