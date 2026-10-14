@@ -1,0 +1,24 @@
+replicaCount: 1
+
+image:
+  repository: bank/transfer
+  tag: local
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 8084
+
+containerPort: 8084
+
+database:
+  host: postgres-transfer
+  port: 5432
+  name: transfer
+  username: transfer
+  password: transfer
+
+keycloak:
+  issuerUri: "http://localhost:8080/realms/bank"
+  jwkSetUri: "http://keycloak:8080/realms/bank/protocol/openid-connect/certs"
+  tokenUri: "http://keycloak:8080/realms/bank/protocol/openid-connect/token"

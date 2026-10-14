@@ -1,0 +1,25 @@
+
+replicaCount: 1
+
+image:
+  repository: bank/cash
+  tag: local
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 8083
+
+containerPort: 8083
+
+database:
+  host: postgres-cash
+  port: 5432
+  name: cash
+  username: cash
+  password: cash
+
+keycloak:
+  issuerUri: "http://localhost:8080/realms/bank"
+  jwkSetUri: "http://keycloak:8080/realms/bank/protocol/openid-connect/certs"
+  tokenUri: "http://keycloak:8080/realms/bank/protocol/openid-connect/token"

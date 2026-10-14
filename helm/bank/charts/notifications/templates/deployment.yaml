@@ -1,0 +1,34 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notifications
+  labels:
+    app: notifications
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: notifications
+  template:
+    metadata:
+      labels:
+        app: notifications
+    spec:
+      containers:
+        - name: notifications
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.containerPort }}
+          env:
+            - name: SPRING_DATASOURCE_URL
+              value: "jdbc:postgresql://{{ .Values.database.host }}:{{ .Values.database.port }}/{{ .Values.database.name }}"
+            - name: SPRING_DATASOURCE_USERNAME
+              value: {{ .Values.database.username | quote }}
+            - name: SPRING_DATASOURCE_PASSWORD
+              value: {{ .Values.database.password | quote }}
+            - name: SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI
+              value: {{ .Values.keycloak.issuerUri | quote }}
+            - name: SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI
+              value: {{ .Values.keycloak.jwkSetUri | quote }}
