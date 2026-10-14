@@ -1,0 +1,5 @@
+﻿apiVersion: v2
+name: accounts
+description: Helm chart for accounts
+type: application
+version: 0.1.0
