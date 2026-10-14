@@ -1,0 +1,16 @@
+replicaCount: 1
+
+image:
+  repository: bank/gateway
+  tag: local
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 8081
+
+containerPort: 8081
+
+consul:
+  host: consul
+  port: 8500

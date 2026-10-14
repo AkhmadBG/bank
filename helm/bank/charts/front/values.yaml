@@ -1,0 +1,12 @@
+replicaCount: 1
+
+image:
+  repository: bank/front
+  tag: local
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 8086
+
+containerPort: 8086
