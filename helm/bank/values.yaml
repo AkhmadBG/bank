@@ -33,3 +33,16 @@ postgres-transfer:
 
 postgres-notification:
   enabled: true
+
+kafka:
+  enabled: true
+  persistence:
+    size: 1Gi
+  topics:
+    - name: notifications
+      partitions: 1
+      replicationFactor: 1
+
+  global:
+    kafka:
+      bootstrapServers: kafka:9092
