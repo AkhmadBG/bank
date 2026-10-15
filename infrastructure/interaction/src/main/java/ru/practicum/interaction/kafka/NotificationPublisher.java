@@ -18,10 +18,6 @@ public class NotificationPublisher {
         this.kafkaTemplate = kafkaTemplate;
     }
 
-    /**
-     * Отправляет уведомление и ждёт подтверждения брокера.
-     * Ошибки только логируются: сбой уведомления не должен ломать бизнес-операцию.
-     */
     public void publish(NotificationMessage message) {
         try {
             kafkaTemplate.send(KafkaTopics.NOTIFICATIONS, message.login(), message)
