@@ -2,24 +2,11 @@ server:
   port: 8084
 
 spring:
-  config:
-    import: "optional:consul:"
   application:
     name: transfer
   liquibase:
     enabled: true
     change-log: classpath:db/changelog/db.changelog-master.yaml
-  cloud:
-    consul:
-      host: localhost
-      port: 8500
-      discovery:
-        service-name: transfer
-      config:
-        enabled: true
-        defaultContext: application
-        prefixes: config
-
   security:
     oauth2:
       resource-server:
@@ -34,8 +21,7 @@ spring:
             authorizationGrantType: client_credentials
             provider: keycloak
             client-id: transfer-service
-#            client-secret: ${KEYCLOAK_TRANSFER_CLIENT_SECRET}
-            client-secret: PYtSUAbgQq5ljGaQYktElzZxqxPBo7hE
+            client-secret: ${KEYCLOAK_TRANSFER_CLIENT_SECRET}
             scope: internal
 
 resilience4j:

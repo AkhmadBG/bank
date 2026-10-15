@@ -1,0 +1,12 @@
+image:
+  repository: postgres
+  tag: "16"
+  pullPolicy: IfNotPresent
+
+database:
+  name: cash
+  user: cash
+  password: cash
+
+storage:
+  size: 1Gi

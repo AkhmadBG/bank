@@ -39,14 +39,35 @@ public class FrontServiceImpl implements FrontService {
     public ResultData editAccount(String name, LocalDate birthdate) {
         String error = null;
         String info = null;
+
         try {
             doEditAccount(name, birthdate);
             info = "Данные сохранены";
+
         } catch (BankOperationException e) {
+            log.warn(
+                    "Ошибка операции изменения аккаунта: {}",
+                    e.getMessage()
+            );
             error = e.getMessage();
-        } catch (FeignException | CallNotPermittedException e) {
+
+        } catch (FeignException e) {
+            log.error(
+                    "Ошибка Feign при изменении аккаунта: status={}, method={}, url={}",
+                    e.status(),
+                    e.request().httpMethod(),
+                    e.request().url()
+            );
+            error = "Сервис аккаунтов временно недоступен";
+
+        } catch (CallNotPermittedException e) {
+            log.error(
+                    "Circuit Breaker отклонил изменение аккаунта: {}",
+                    e.getMessage()
+            );
             error = "Сервис аккаунтов временно недоступен";
         }
+
         return fetchCurrentState(error, info);
     }
 

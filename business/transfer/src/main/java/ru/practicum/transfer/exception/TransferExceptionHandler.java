@@ -5,6 +5,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import ru.practicum.interaction.exception.ApiError;
+import ru.practicum.interaction.exception.AccountCallException;
 
 @RestControllerAdvice
 public class TransferExceptionHandler {

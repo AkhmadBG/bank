@@ -2,20 +2,8 @@ server:
   port: 8086
 
 spring:
-  config:
-    import: "optional:consul:"
   application:
     name: front
-  cloud:
-    consul:
-      host: localhost
-      port: 8500
-      discovery:
-        service-name: front
-      config:
-        enabled: true
-        defaultContext: application
-        prefixes: config
   security:
     oauth2:
       client:
@@ -29,8 +17,7 @@ spring:
             authorizationGrantType: authorization_code
             provider: keycloak
             client-id: front
-#            client-secret: ${KEYCLOAK_FRONT_CLIENT_SECRET}
-            client-secret: 1VHNPDi3FUI5Zpn1MJWdppYCbs8WeDul
+            client-secret: ${KEYCLOAK_FRONT_CLIENT_SECRET}
             redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
             scope: openid, profile, email
 
@@ -50,6 +37,8 @@ logging:
   level:
     org.springframework.security.oauth2: debug
     root: debug
+    org.springframework.cloud.openfeign: DEBUG
+    feign: DEBUG
     org:
       zalando:
         logbook: debug

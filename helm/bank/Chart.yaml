@@ -1,0 +1,41 @@
+apiVersion: v2
+name: bank
+description: Bank microservices application for local Kubernetes
+type: application
+version: 0.1.0
+appVersion: "0.0.1"
+
+dependencies:
+  - name: front
+    version: 0.1.0
+    repository: "file://charts/front"
+  - name: gateway
+    version: 0.1.0
+    repository: "file://charts/gateway"
+  - name: accounts
+    version: 0.1.0
+    repository: "file://charts/accounts"
+  - name: cash
+    version: 0.1.0
+    repository: "file://charts/cash"
+  - name: transfer
+    version: 0.1.0
+    repository: "file://charts/transfer"
+  - name: notifications
+    version: 0.1.0
+    repository: "file://charts/notifications"
+  - name: keycloak
+    version: 0.1.0
+    repository: "file://charts/keycloak"
+  - name: postgres-account
+    version: 0.1.0
+    repository: "file://charts/postgres-account"
+  - name: postgres-cash
+    version: 0.1.0
+    repository: "file://charts/postgres-cash"
+  - name: postgres-transfer
+    version: 0.1.0
+    repository: "file://charts/postgres-transfer"
+  - name: postgres-notification
+    version: 0.1.0
+    repository: "file://charts/postgres-notification"

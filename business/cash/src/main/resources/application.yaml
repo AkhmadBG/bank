@@ -2,23 +2,11 @@ server:
   port: 8083
 
 spring:
-  config:
-    import: "optional:consul:"
   application:
     name: cash
   liquibase:
     enabled: true
     change-log: classpath:db/changelog/db.changelog-master.yaml
-  cloud:
-    consul:
-      host: localhost
-      port: 8500
-      discovery:
-        service-name: cash
-      config:
-        enabled: true
-        defaultContext: application
-        prefixes: config
   security:
     oauth2:
       resource-server:
@@ -33,8 +21,7 @@ spring:
             authorizationGrantType: client_credentials
             provider: keycloak
             client-id: cash-service
-            #            client-secret: ${KEYCLOAK_CASH_CLIENT_SECRET}
-            client-secret: 2Bw5T63L8ZdrxP3CpUYoYWxmTgKXr2Wc
+            client-secret: ${KEYCLOAK_CASH_CLIENT_SECRET}
             scope: internal
 
 resilience4j:

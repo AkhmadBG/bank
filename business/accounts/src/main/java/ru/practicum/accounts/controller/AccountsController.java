@@ -21,7 +21,7 @@ public class AccountsController implements AccountOperations {
         return ResponseEntity.ok(result);
     }
 
-    @PatchMapping
+    @PutMapping
     public ResponseEntity<ResultData> editAccount(@RequestBody EditAccountRequest editAccountRequest) {
         ResultData result = accountService.editAccount(editAccountRequest);
         return ResponseEntity.ok(result);

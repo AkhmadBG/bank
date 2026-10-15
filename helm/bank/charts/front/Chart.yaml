@@ -1,0 +1,5 @@
+﻿apiVersion: v2
+name: front
+description: Helm chart for front
+type: application
+version: 0.1.0

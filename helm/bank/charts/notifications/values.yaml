@@ -1,0 +1,23 @@
+replicaCount: 1
+
+image:
+  repository: bank/notifications
+  tag: local
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 8085
+
+containerPort: 8085
+
+database:
+  host: postgres-notification
+  port: 5432
+  name: notification
+  username: notification
+  password: notification
+
+keycloak:
+  issuerUri: "http://localhost:8080/realms/bank"
+  jwkSetUri: "http://keycloak:8080/realms/bank/protocol/openid-connect/certs"
