@@ -14,8 +14,9 @@ import ru.practicum.interaction.account.dto.BalanceChangeRequest;
 import ru.practicum.interaction.cash.dto.CashOperationRequest;
 import ru.practicum.interaction.cash.enums.CashAction;
 import ru.practicum.interaction.feignclient.AccountInternalFeignClient;
-import ru.practicum.interaction.feignclient.NotificationFeignClient;
-import ru.practicum.interaction.notification.dto.NotificationRequest;
+import ru.practicum.interaction.kafka.NotificationMessage;
+import ru.practicum.interaction.kafka.NotificationPublisher;
+import ru.practicum.interaction.kafka.NotificationType;
 
 import java.time.LocalDateTime;
 
@@ -25,7 +26,7 @@ import java.time.LocalDateTime;
 public class CashServiceImpl implements CashService {
 
     private final AccountInternalFeignClient accountInternalFeignClient;
-    private final NotificationFeignClient notificationFeignClient;
+    private final NotificationPublisher notificationPublisher;
     private final CashOperationRepository cashOperationRepository;
     private final CurrentUserProvider currentUserProvider;
 
@@ -66,7 +67,11 @@ public class CashServiceImpl implements CashService {
                 ? "Пополнение счёта на " + request.amount()
                 : "Снятие со счёта " + request.amount();
 
-        notificationFeignClient.sendNotification(new NotificationRequest(login, description));
+        NotificationType type = request.cashAction() == CashAction.PUT ? NotificationType.DEPOSIT : NotificationType.WITHDRAW;
+        String text = (type == NotificationType.DEPOSIT ? "Пополнение счёта на " : "Снятие со счёта ") + request.amount();
+
+        notificationPublisher.publish(new NotificationMessage(login, type, text, request.amount()));
+//        notificationFeignClient.sendNotification(new NotificationRequest(login, description));
     }
 
     private void notificationFallback(String login, CashOperationRequest request, Throwable t) {

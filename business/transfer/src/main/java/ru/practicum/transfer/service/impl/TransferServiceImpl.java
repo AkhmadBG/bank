@@ -8,8 +8,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.interaction.account.dto.InternalTransferRequest;
 import ru.practicum.interaction.feignclient.AccountInternalFeignClient;
-import ru.practicum.interaction.feignclient.NotificationFeignClient;
-import ru.practicum.interaction.notification.dto.NotificationRequest;
+//import ru.practicum.interaction.feignclient.NotificationFeignClient;
+//import ru.practicum.interaction.notification.dto.NotificationRequest;
+import ru.practicum.interaction.kafka.NotificationMessage;
+import ru.practicum.interaction.kafka.NotificationPublisher;
+import ru.practicum.interaction.kafka.NotificationType;
 import ru.practicum.interaction.transfer.dto.TransferOperationRequest;
 import ru.practicum.transfer.config.CurrentUserProvider;
 import ru.practicum.transfer.entity.TransferOperation;
@@ -25,7 +28,7 @@ import java.time.LocalDateTime;
 public class TransferServiceImpl implements TransferService {
 
     private final AccountInternalFeignClient accountInternalFeignClient;
-    private final NotificationFeignClient notificationFeignClient;
+    private final NotificationPublisher notificationPublisher;
     private final TransferOperationRepository transferOperationRepository;
     private final CurrentUserProvider currentUserProvider;
 
@@ -67,8 +70,11 @@ public class TransferServiceImpl implements TransferService {
 
     @CircuitBreaker(name = "notifications", fallbackMethod = "notifySenderFallback")
     protected void notifySender(String senderLogin, TransferOperationRequest request) {
-        notificationFeignClient.sendNotification(new NotificationRequest(
-                senderLogin, "Перевод получателю " + request.loginRecipient() + " на сумму " + request.amount()));
+        notificationPublisher.publish(new NotificationMessage(
+                senderLogin, NotificationType.TRANSFER,
+                "Перевод " + request.amount() + " пользователю " + request.loginRecipient(), request.amount()));
+//        notificationFeignClient.sendNotification(new NotificationRequest(
+//                senderLogin, "Перевод получателю " + request.loginRecipient() + " на сумму " + request.amount()));
     }
 
     private void notifySenderFallback(String senderLogin, TransferOperationRequest request, Throwable t) {
@@ -77,8 +83,11 @@ public class TransferServiceImpl implements TransferService {
 
     @CircuitBreaker(name = "notifications", fallbackMethod = "notifyRecipientFallback")
     protected void notifyRecipient(String senderLogin, TransferOperationRequest request) {
-        notificationFeignClient.sendNotification(new NotificationRequest(
-                request.loginRecipient(), "Получен перевод от " + senderLogin + " на сумму " + request.amount()));
+        notificationPublisher.publish(new NotificationMessage(
+                request.loginRecipient(), NotificationType.TRANSFER,
+                "Поступил перевод " + request.amount() + " от " + senderLogin, request.amount()));
+//        notificationFeignClient.sendNotification(new NotificationRequest(
+//                request.loginRecipient(), "Получен перевод от " + senderLogin + " на сумму " + request.amount()));
     }
 
     private void notifyRecipientFallback(String senderLogin, TransferOperationRequest request, Throwable t) {

@@ -13,9 +13,12 @@ import ru.practicum.accounts.repository.AccountRepository;
 import ru.practicum.accounts.service.AccountService;
 import ru.practicum.interaction.account.dto.EditAccountRequest;
 import ru.practicum.interaction.account.dto.UserAccountDto;
-import ru.practicum.interaction.feignclient.NotificationFeignClient;
+//import ru.practicum.interaction.feignclient.NotificationFeignClient;
 import ru.practicum.interaction.front.dto.ResultData;
-import ru.practicum.interaction.notification.dto.NotificationRequest;
+import ru.practicum.interaction.kafka.NotificationMessage;
+import ru.practicum.interaction.kafka.NotificationPublisher;
+import ru.practicum.interaction.kafka.NotificationType;
+//import ru.practicum.interaction.notification.dto.NotificationRequest;
 
 import java.time.LocalDate;
 import java.time.Period;
@@ -31,7 +34,7 @@ public class AccountServiceImpl implements AccountService {
     private final AccountRepository accountRepository;
     private final AccountMapper accountMapper;
     private final CurrentUserProvider currentUserProvider;
-    private final NotificationFeignClient notificationFeignClient;
+    private final NotificationPublisher notificationPublisher;
 
     @Override
     @Transactional(readOnly = true)
@@ -81,7 +84,9 @@ public class AccountServiceImpl implements AccountService {
         try {
             String description = "Изменены данные аккаунта: имя — " + request.name()
                     + ", дата рождения — " + request.birthdate();
-            notificationFeignClient.sendNotification(new NotificationRequest(login, description));
+            notificationPublisher.publish(new NotificationMessage(
+                    login, NotificationType.ACCOUNT_UPDATE, "Данные аккаунта изменены", null));
+//            notificationFeignClient.sendNotification(new NotificationRequest(login, description));
         } catch (Exception e) {
             log.warn("Не удалось отправить уведомление для {}: {}", login, e.getMessage());
         }
