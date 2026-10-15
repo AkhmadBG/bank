@@ -1,5 +1,7 @@
 global:
   imagePullPolicy: IfNotPresent
+  kafka:
+    bootstrapServers: kafka:9092
 
 front:
   enabled: true
@@ -42,7 +44,3 @@ kafka:
     - name: notifications
       partitions: 1
       replicationFactor: 1
-
-  global:
-    kafka:
-      bootstrapServers: kafka:9092

@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: notifications-config
+  labels:
+    app: notifications
+data:
+  SPRING_KAFKA_BOOTSTRAP_SERVERS: {{ dig "kafka" "bootstrapServers" "kafka:9092" .Values.global | quote }}
+  SPRING_KAFKA_CONSUMER_GROUP_ID: "notifications"
+  SPRING_KAFKA_CONSUMER_AUTO_OFFSET_RESET: "earliest"
+  SPRING_KAFKA_CONSUMER_ENABLE_AUTO_COMMIT: "false"
+  SPRING_KAFKA_LISTENER_ACK_MODE: "record"
