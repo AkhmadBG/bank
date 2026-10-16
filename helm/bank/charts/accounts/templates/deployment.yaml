@@ -39,3 +39,6 @@ spec:
                 secretKeyRef:
                   name: bank-app-secrets
                   key: KEYCLOAK_ACCOUNTS_CLIENT_SECRET
+          envFrom:
+            - configMapRef:
+                name: accounts-config

@@ -4,7 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import ru.practicum.interaction.notification.dto.NotificationRequest;
+import ru.practicum.interaction.kafka.NotificationMessage;
 import ru.practicum.notifications.entity.Notification;
 import ru.practicum.notifications.repository.NotificationRepository;
 import ru.practicum.notifications.service.NotificationService;
@@ -20,12 +20,12 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Override
     @Transactional
-    public void sendNotification(NotificationRequest request) {
-        log.info("Уведомление для {}: {}", request.recipient(), request.description());
+    public void send(NotificationMessage message) {
+        log.info("NOTIFICATION for {} [{}]: {}", message.login(), message.type(), message.message());
 
         Notification notification = Notification.builder()
-                .recipient(request.recipient())
-                .description(request.description())
+                .recipient(message.login())
+                .description(message.message())
                 .createdAt(LocalDateTime.now())
                 .build();
 

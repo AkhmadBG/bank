@@ -1,0 +1,24 @@
+image:
+  repository: apache/kafka
+  tag: "3.9.0"
+  pullPolicy: IfNotPresent
+
+clusterId: "MkU3OEVBNTcwNTJENDM2Qk"
+
+persistence:
+  size: 1Gi
+  storageClass: ""
+
+resources:
+  requests:
+    cpu: 200m
+    memory: 512Mi
+  limits:
+    memory: 1Gi
+
+heapOpts: "-Xms256m -Xmx512m"
+
+topics:
+  - name: notifications
+    partitions: 3
+    replicationFactor: 1

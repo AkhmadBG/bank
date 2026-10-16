@@ -1,5 +1,7 @@
 global:
   imagePullPolicy: IfNotPresent
+  kafka:
+    bootstrapServers: kafka:9092
 
 front:
   enabled: true
@@ -33,3 +35,12 @@ postgres-transfer:
 
 postgres-notification:
   enabled: true
+
+kafka:
+  enabled: true
+  persistence:
+    size: 1Gi
+  topics:
+    - name: notifications
+      partitions: 1
+      replicationFactor: 1

@@ -1,0 +1,41 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: kafka-create-topics
+  labels:
+    app: kafka
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-weight": "1"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  backoffLimit: 5
+  template:
+    metadata:
+      labels:
+        app: kafka-topics-job
+    spec:
+      restartPolicy: OnFailure
+      enableServiceLinks: false
+      containers:
+        - name: create-topics
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["/bin/bash", "-c"]
+          args:
+            - |
+              set -e
+              BIN=/opt/kafka/bin
+              BOOTSTRAP=kafka:9092
+              echo "Waiting for Kafka at $BOOTSTRAP ..."
+              until $BIN/kafka-topics.sh --bootstrap-server $BOOTSTRAP --list >/dev/null 2>&1; do
+                sleep 3
+              done
+              {{- range .Values.topics }}
+              $BIN/kafka-topics.sh --bootstrap-server $BOOTSTRAP --create --if-not-exists \
+                --topic {{ .name }} \
+                --partitions {{ .partitions }} \
+                --replication-factor {{ .replicationFactor }}
+              {{- end }}
+              echo "Topics:"
+              $BIN/kafka-topics.sh --bootstrap-server $BOOTSTRAP --list

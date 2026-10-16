@@ -19,7 +19,7 @@ public class CashController implements CashOperations {
     private final CashService cashService;
 
     @PostMapping
-    public ResponseEntity<Void> cashOperation(@RequestBody @Valid CashOperationRequest cashOperationRequest) {
+    public ResponseEntity<Void> cashOperation(@Valid @RequestBody CashOperationRequest cashOperationRequest) {
         cashService.cashOperation(cashOperationRequest);
         return ResponseEntity.ok().build();
     }

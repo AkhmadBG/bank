@@ -85,7 +85,10 @@ public class FrontServiceImpl implements FrontService {
             info = action == CashAction.PUT ? "Счёт пополнен" : "Средства сняты";
         } catch (BankOperationException e) {
             error = e.getMessage();
-        } catch (FeignException | CallNotPermittedException e) {
+        } catch (FeignException e) {
+            error = "Сервис обналичивания временно недоступен";
+        } catch (CallNotPermittedException e) {
+            log.error("Circuit Breaker отклонил запрос: {}", e.getMessage());
             error = "Сервис обналичивания временно недоступен";
         }
         return fetchCurrentState(error, info);
@@ -104,8 +107,14 @@ public class FrontServiceImpl implements FrontService {
             doTransfer(value, recipientAccountLogin);
             info = "Перевод выполнен";
         } catch (BankOperationException e) {
+            log.warn("Ошибка операции: {}", e.getMessage());
             error = e.getMessage();
-        } catch (FeignException | CallNotPermittedException e) {
+        } catch (FeignException e) {
+            log.error("Ошибка Feign: status={}, method={}, url={}",
+                    e.status(), e.request().httpMethod(), e.request().url());
+            error = "Сервис переводов временно недоступен";
+        } catch (CallNotPermittedException e) {
+            log.error("Circuit Breaker отклонил запрос: {}", e.getMessage());
             error = "Сервис переводов временно недоступен";
         }
         return fetchCurrentState(error, info);

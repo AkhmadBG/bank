@@ -14,9 +14,12 @@ import ru.practicum.interaction.account.dto.BalanceChangeRequest;
 import ru.practicum.interaction.cash.dto.CashOperationRequest;
 import ru.practicum.interaction.cash.enums.CashAction;
 import ru.practicum.interaction.feignclient.AccountInternalFeignClient;
-import ru.practicum.interaction.feignclient.NotificationFeignClient;
-import ru.practicum.interaction.notification.dto.NotificationRequest;
+import ru.practicum.interaction.kafka.NotificationMessage;
+import ru.practicum.interaction.kafka.NotificationPublisher;
+import ru.practicum.interaction.kafka.NotificationType;
+import ru.practicum.interaction.util.ApplicationUtil;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Slf4j
@@ -25,12 +28,13 @@ import java.time.LocalDateTime;
 public class CashServiceImpl implements CashService {
 
     private final AccountInternalFeignClient accountInternalFeignClient;
-    private final NotificationFeignClient notificationFeignClient;
+    private final NotificationPublisher notificationPublisher;
     private final CashOperationRepository cashOperationRepository;
     private final CurrentUserProvider currentUserProvider;
 
     @Override
     public void cashOperation(CashOperationRequest request) {
+        ApplicationUtil.validateAmount(request.amount());
         String login = currentUserProvider.getCurrentLogin();
 
         changeBalance(login, request);
@@ -43,6 +47,7 @@ public class CashServiceImpl implements CashService {
     @CircuitBreaker(name = "accounts")
     @Retry(name = "accounts")
     protected void changeBalance(String login, CashOperationRequest request) {
+        ApplicationUtil.validateAmount(request.amount());
         accountInternalFeignClient.changeBalance(
                 new BalanceChangeRequest(login, request.cashAction(), request.amount())
         );
@@ -50,6 +55,7 @@ public class CashServiceImpl implements CashService {
 
     @Transactional
     protected void persistOperation(String login, CashOperationRequest request) {
+        ApplicationUtil.validateAmount(request.amount());
         CashOperation operation = CashOperation.builder()
                 .login(login)
                 .cashOperationType(request.cashAction())
@@ -62,15 +68,11 @@ public class CashServiceImpl implements CashService {
 
     @CircuitBreaker(name = "notifications", fallbackMethod = "notificationFallback")
     protected void sendNotificationBestEffort(String login, CashOperationRequest request) {
-        String description = request.cashAction() == CashAction.PUT
-                ? "Пополнение счёта на " + request.amount()
-                : "Снятие со счёта " + request.amount();
+        ApplicationUtil.validateAmount(request.amount());
+        NotificationType type = request.cashAction() == CashAction.PUT ? NotificationType.DEPOSIT : NotificationType.WITHDRAW;
+        String text = (type == NotificationType.DEPOSIT ? "Пополнение счёта на " : "Снятие со счёта ") + request.amount();
 
-        notificationFeignClient.sendNotification(new NotificationRequest(login, description));
-    }
-
-    private void notificationFallback(String login, CashOperationRequest request, Throwable t) {
-        log.warn("Не удалось отправить уведомление для {}: {}", login, t.getMessage());
+        notificationPublisher.publish(new NotificationMessage(login, type, text, request.amount()));
     }
 
 }

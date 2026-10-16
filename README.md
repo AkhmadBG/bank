@@ -1,2 +1,2 @@
 ## Bank application
-### Kubernetes
+### Apache Kafka
