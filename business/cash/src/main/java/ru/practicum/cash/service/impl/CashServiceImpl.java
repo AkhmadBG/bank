@@ -63,19 +63,10 @@ public class CashServiceImpl implements CashService {
 
     @CircuitBreaker(name = "notifications", fallbackMethod = "notificationFallback")
     protected void sendNotificationBestEffort(String login, CashOperationRequest request) {
-        String description = request.cashAction() == CashAction.PUT
-                ? "Пополнение счёта на " + request.amount()
-                : "Снятие со счёта " + request.amount();
-
         NotificationType type = request.cashAction() == CashAction.PUT ? NotificationType.DEPOSIT : NotificationType.WITHDRAW;
         String text = (type == NotificationType.DEPOSIT ? "Пополнение счёта на " : "Снятие со счёта ") + request.amount();
 
         notificationPublisher.publish(new NotificationMessage(login, type, text, request.amount()));
-//        notificationFeignClient.sendNotification(new NotificationRequest(login, description));
-    }
-
-    private void notificationFallback(String login, CashOperationRequest request, Throwable t) {
-        log.warn("Не удалось отправить уведомление для {}: {}", login, t.getMessage());
     }
 
 }

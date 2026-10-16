@@ -3,7 +3,6 @@ package ru.practicum.interaction.exception;
 import feign.Response;
 import feign.codec.ErrorDecoder;
 import org.springframework.http.HttpStatusCode;
-import ru.practicum.interaction.exception.ApiError;
 import tools.jackson.databind.ObjectMapper;
 
 import java.io.IOException;

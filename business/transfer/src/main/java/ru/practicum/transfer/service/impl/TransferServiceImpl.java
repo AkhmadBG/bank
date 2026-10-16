@@ -8,8 +8,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.interaction.account.dto.InternalTransferRequest;
 import ru.practicum.interaction.feignclient.AccountInternalFeignClient;
-//import ru.practicum.interaction.feignclient.NotificationFeignClient;
-//import ru.practicum.interaction.notification.dto.NotificationRequest;
 import ru.practicum.interaction.kafka.NotificationMessage;
 import ru.practicum.interaction.kafka.NotificationPublisher;
 import ru.practicum.interaction.kafka.NotificationType;
@@ -73,12 +71,6 @@ public class TransferServiceImpl implements TransferService {
         notificationPublisher.publish(new NotificationMessage(
                 senderLogin, NotificationType.TRANSFER,
                 "Перевод " + request.amount() + " пользователю " + request.loginRecipient(), request.amount()));
-//        notificationFeignClient.sendNotification(new NotificationRequest(
-//                senderLogin, "Перевод получателю " + request.loginRecipient() + " на сумму " + request.amount()));
-    }
-
-    private void notifySenderFallback(String senderLogin, TransferOperationRequest request, Throwable t) {
-        log.warn("Не удалось отправить уведомление отправителю {}: {}", senderLogin, t.getMessage());
     }
 
     @CircuitBreaker(name = "notifications", fallbackMethod = "notifyRecipientFallback")
@@ -86,12 +78,6 @@ public class TransferServiceImpl implements TransferService {
         notificationPublisher.publish(new NotificationMessage(
                 request.loginRecipient(), NotificationType.TRANSFER,
                 "Поступил перевод " + request.amount() + " от " + senderLogin, request.amount()));
-//        notificationFeignClient.sendNotification(new NotificationRequest(
-//                request.loginRecipient(), "Получен перевод от " + senderLogin + " на сумму " + request.amount()));
-    }
-
-    private void notifyRecipientFallback(String senderLogin, TransferOperationRequest request, Throwable t) {
-        log.warn("Не удалось отправить уведомление получателю {}: {}", request.loginRecipient(), t.getMessage());
     }
 
 }
