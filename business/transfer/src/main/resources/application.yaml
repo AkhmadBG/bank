@@ -24,7 +24,7 @@ spring:
             client-secret: ${KEYCLOAK_TRANSFER_CLIENT_SECRET}
             scope: internal
   kafka:
-    bootstrap-servers: localhost:9092
+    bootstrap-servers: kafka:9092
     producer:
       acks: all
       retries: 10

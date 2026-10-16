@@ -5,7 +5,7 @@ spring:
     enabled: true
     change-log: classpath:db/changelog/db.changelog-master.yaml
   kafka:
-    bootstrap-servers: localhost:9092
+    bootstrap-servers: kafka:9092
     consumer:
       group-id: notifications
       auto-offset-reset: earliest
@@ -14,8 +14,8 @@ spring:
       value-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
       properties:
         spring.deserializer.value.delegate.class: org.springframework.kafka.support.serializer.JsonDeserializer
-        spring.json.value.default.type: <ваш.пакет>.kafka.NotificationMessage
-        spring.json.trusted.packages: <ваш.пакет>.kafka
+        spring.json.value.default.type: ru.practicum.interaction.kafka.NotificationMessage
+        spring.json.trusted.packages: ru.practicum.interaction.kafka
         spring.json.use.type.headers: false
     listener:
       ack-mode: record

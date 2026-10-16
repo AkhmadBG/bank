@@ -1,0 +1,4 @@
+.git
+.idea
+helm
+**/node_modules
