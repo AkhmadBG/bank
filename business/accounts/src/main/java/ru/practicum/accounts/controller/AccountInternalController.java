@@ -1,5 +1,6 @@
 package ru.practicum.accounts.controller;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -17,13 +18,13 @@ public class AccountInternalController implements AccountInternalOperations {
     private final AccountInternalService accountInternalService;
 
     @PostMapping("/internal/account/balance")
-    public ResponseEntity<Void> changeBalance(@RequestBody BalanceChangeRequest request) {
+    public ResponseEntity<Void> changeBalance(@Valid @RequestBody BalanceChangeRequest request) {
         accountInternalService.changeBalance(request);
         return ResponseEntity.ok().build();
     }
 
     @PostMapping("/internal/account/transfer")
-    public ResponseEntity<Void> transferBalance(@RequestBody InternalTransferRequest request) {
+    public ResponseEntity<Void> transferBalance(@Valid @RequestBody InternalTransferRequest request) {
         accountInternalService.transferBalance(request);
         return ResponseEntity.ok().build();
     }

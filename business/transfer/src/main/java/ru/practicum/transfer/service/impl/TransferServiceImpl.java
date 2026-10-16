@@ -12,6 +12,7 @@ import ru.practicum.interaction.kafka.NotificationMessage;
 import ru.practicum.interaction.kafka.NotificationPublisher;
 import ru.practicum.interaction.kafka.NotificationType;
 import ru.practicum.interaction.transfer.dto.TransferOperationRequest;
+import ru.practicum.interaction.util.ApplicationUtil;
 import ru.practicum.transfer.config.CurrentUserProvider;
 import ru.practicum.transfer.entity.TransferOperation;
 import ru.practicum.transfer.exception.SelfTransferException;
@@ -32,6 +33,7 @@ public class TransferServiceImpl implements TransferService {
 
     @Override
     public void transfer(TransferOperationRequest request) {
+        ApplicationUtil.validateAmount(request.amount());
         String senderLogin = currentUserProvider.getCurrentLogin();
 
         if (senderLogin.equals(request.loginRecipient())) {
@@ -49,6 +51,7 @@ public class TransferServiceImpl implements TransferService {
     @CircuitBreaker(name = "accounts")
     @Retry(name = "accounts")
     protected void transferBalance(String senderLogin, TransferOperationRequest request) {
+        ApplicationUtil.validateAmount(request.amount());
         accountInternalFeignClient.transferBalance(
                 new InternalTransferRequest(senderLogin, request.loginRecipient(), request.amount())
         );
@@ -56,6 +59,7 @@ public class TransferServiceImpl implements TransferService {
 
     @Transactional
     protected void persistOperation(String senderLogin, TransferOperationRequest request) {
+        ApplicationUtil.validateAmount(request.amount());
         TransferOperation operation = TransferOperation.builder()
                 .loginSender(senderLogin)
                 .loginRecipient(request.loginRecipient())
@@ -68,6 +72,7 @@ public class TransferServiceImpl implements TransferService {
 
     @CircuitBreaker(name = "notifications", fallbackMethod = "notifySenderFallback")
     protected void notifySender(String senderLogin, TransferOperationRequest request) {
+        ApplicationUtil.validateAmount(request.amount());
         notificationPublisher.publish(new NotificationMessage(
                 senderLogin, NotificationType.TRANSFER,
                 "Перевод " + request.amount() + " пользователю " + request.loginRecipient(), request.amount()));
@@ -75,6 +80,7 @@ public class TransferServiceImpl implements TransferService {
 
     @CircuitBreaker(name = "notifications", fallbackMethod = "notifyRecipientFallback")
     protected void notifyRecipient(String senderLogin, TransferOperationRequest request) {
+        ApplicationUtil.validateAmount(request.amount());
         notificationPublisher.publish(new NotificationMessage(
                 request.loginRecipient(), NotificationType.TRANSFER,
                 "Поступил перевод " + request.amount() + " от " + senderLogin, request.amount()));

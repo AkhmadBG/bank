@@ -11,6 +11,7 @@ import ru.practicum.accounts.service.AccountInternalService;
 import ru.practicum.interaction.account.dto.BalanceChangeRequest;
 import ru.practicum.interaction.account.dto.InternalTransferRequest;
 import ru.practicum.interaction.cash.enums.CashAction;
+import ru.practicum.interaction.util.ApplicationUtil;
 
 import java.math.BigDecimal;
 
@@ -23,6 +24,7 @@ public class AccountInternalServiceImpl implements AccountInternalService {
     @Override
     @Transactional
     public void changeBalance(BalanceChangeRequest request) {
+        ApplicationUtil.validateAmount(request.amount());
         Account account = accountRepository.findByLoginForUpdate(request.login())
                 .orElseThrow(() -> new AccountNotFoundException(request.login()));
 
@@ -33,6 +35,7 @@ public class AccountInternalServiceImpl implements AccountInternalService {
     @Override
     @Transactional
     public void transferBalance(InternalTransferRequest request) {
+        ApplicationUtil.validateAmount(request.amount());
         String first = request.loginSender().compareTo(request.loginRecipient()) < 0
                 ? request.loginSender() : request.loginRecipient();
         String second = request.loginSender().compareTo(request.loginRecipient()) < 0

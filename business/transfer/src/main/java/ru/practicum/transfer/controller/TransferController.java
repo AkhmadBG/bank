@@ -19,7 +19,7 @@ public class TransferController implements TransferOperations {
     private final TransferService transferService;
 
     @PostMapping
-    public ResponseEntity<Void> transferOperation(@RequestBody @Valid TransferOperationRequest transferOperationRequest) {
+    public ResponseEntity<Void> transferOperation(@Valid @RequestBody TransferOperationRequest transferOperationRequest) {
         transferService.transfer(transferOperationRequest);
         return ResponseEntity.ok().build();
     }

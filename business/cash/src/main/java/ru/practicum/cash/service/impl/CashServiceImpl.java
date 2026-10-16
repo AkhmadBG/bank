@@ -17,7 +17,9 @@ import ru.practicum.interaction.feignclient.AccountInternalFeignClient;
 import ru.practicum.interaction.kafka.NotificationMessage;
 import ru.practicum.interaction.kafka.NotificationPublisher;
 import ru.practicum.interaction.kafka.NotificationType;
+import ru.practicum.interaction.util.ApplicationUtil;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Slf4j
@@ -32,6 +34,7 @@ public class CashServiceImpl implements CashService {
 
     @Override
     public void cashOperation(CashOperationRequest request) {
+        ApplicationUtil.validateAmount(request.amount());
         String login = currentUserProvider.getCurrentLogin();
 
         changeBalance(login, request);
@@ -44,6 +47,7 @@ public class CashServiceImpl implements CashService {
     @CircuitBreaker(name = "accounts")
     @Retry(name = "accounts")
     protected void changeBalance(String login, CashOperationRequest request) {
+        ApplicationUtil.validateAmount(request.amount());
         accountInternalFeignClient.changeBalance(
                 new BalanceChangeRequest(login, request.cashAction(), request.amount())
         );
@@ -51,6 +55,7 @@ public class CashServiceImpl implements CashService {
 
     @Transactional
     protected void persistOperation(String login, CashOperationRequest request) {
+        ApplicationUtil.validateAmount(request.amount());
         CashOperation operation = CashOperation.builder()
                 .login(login)
                 .cashOperationType(request.cashAction())
@@ -63,6 +68,7 @@ public class CashServiceImpl implements CashService {
 
     @CircuitBreaker(name = "notifications", fallbackMethod = "notificationFallback")
     protected void sendNotificationBestEffort(String login, CashOperationRequest request) {
+        ApplicationUtil.validateAmount(request.amount());
         NotificationType type = request.cashAction() == CashAction.PUT ? NotificationType.DEPOSIT : NotificationType.WITHDRAW;
         String text = (type == NotificationType.DEPOSIT ? "Пополнение счёта на " : "Снятие со счёта ") + request.amount();
 

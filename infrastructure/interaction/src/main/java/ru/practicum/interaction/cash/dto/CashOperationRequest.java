@@ -1,7 +1,7 @@
 package ru.practicum.interaction.cash.dto;
 
+import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Positive;
 import ru.practicum.interaction.cash.enums.CashAction;
 
 import java.math.BigDecimal;
@@ -11,8 +11,12 @@ public record CashOperationRequest(
         @NotNull
         CashAction cashAction,
 
-        @NotNull
-        @Positive
+        @NotNull(message = "Сумма обязательна")
+        @DecimalMin(
+                value = "0.0",
+                inclusive = false,
+                message = "Сумма должна быть больше нуля"
+        )
         BigDecimal amount
 
 ) {
