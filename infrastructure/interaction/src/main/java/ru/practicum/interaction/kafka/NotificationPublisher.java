@@ -26,8 +26,10 @@ public class NotificationPublisher {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             log.error("Interrupted while sending notification for {}", message.login(), e);
+            throw new IllegalStateException("Отправка уведомления была прервана", e);
         } catch (Exception e) {
             log.error("Failed to send notification for {} (type {})", message.login(), message.type(), e);
+            throw new IllegalStateException("Не удалось отправить сообщение", e);
         }
     }
 

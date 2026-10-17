@@ -21,6 +21,7 @@ import ru.practicum.interaction.kafka.NotificationType;
 import java.time.LocalDate;
 import java.time.Period;
 import java.util.List;
+import java.util.UUID;
 
 import static ru.practicum.interaction.util.ApplicationConstant.MIN_AGE;
 
@@ -81,7 +82,7 @@ public class AccountServiceImpl implements AccountService {
     private void sendNotificationBestEffort(String login, EditAccountRequest request) {
         try {
             notificationPublisher.publish(new NotificationMessage(
-                    login, NotificationType.ACCOUNT_UPDATE, "Данные аккаунта изменены", null));
+                    UUID.randomUUID(), login, NotificationType.ACCOUNT_UPDATE, "Данные аккаунта изменены", null));
         } catch (Exception e) {
             log.warn("Не удалось отправить уведомление для {}: {}", login, e.getMessage());
         }

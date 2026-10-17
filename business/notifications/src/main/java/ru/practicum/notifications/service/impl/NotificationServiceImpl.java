@@ -21,9 +21,15 @@ public class NotificationServiceImpl implements NotificationService {
     @Override
     @Transactional
     public void send(NotificationMessage message) {
+        if (message.eventId() != null && notificationRepository.existsByEventId(message.eventId())) {
+            log.info("Повторное уведомление {} пропущено", message.eventId());
+            return;
+        }
+
         log.info("NOTIFICATION for {} [{}]: {}", message.login(), message.type(), message.message());
 
         Notification notification = Notification.builder()
+                .eventId(message.eventId())
                 .recipient(message.login())
                 .description(message.message())
                 .createdAt(LocalDateTime.now())

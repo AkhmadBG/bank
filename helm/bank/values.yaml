@@ -44,3 +44,17 @@ kafka:
     - name: notifications
       partitions: 1
       replicationFactor: 1
+    - name: notifications.DLT
+      partitions: 1
+      replicationFactor: 1
+
+secrets:
+  create: true
+  bankApp:
+    KEYCLOAK_FRONT_CLIENT_SECRET: "1VHNPDi3FUI5Zpn1MJWdppYCbs8WeDul"
+    KEYCLOAK_CASH_CLIENT_SECRET: "2Bw5T63L8ZdrxP3CpUYoYWxmTgKXr2Wc"
+    KEYCLOAK_TRANSFER_CLIENT_SECRET: "PYtSUAbgQq5ljGaQYktElzZxqxPBo7hE"
+    KEYCLOAK_ACCOUNTS_CLIENT_SECRET: "zSWsffubr7kR9R7lnZjfiA5CItKPURFL"
+  keycloakAdmin:
+    KC_BOOTSTRAP_ADMIN_USERNAME: "admin"
+    KC_BOOTSTRAP_ADMIN_PASSWORD: "admin"

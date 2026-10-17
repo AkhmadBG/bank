@@ -10,6 +10,8 @@ import java.io.InputStream;
 
 public class AccountCallErrorDecoder implements ErrorDecoder {
 
+    private static final String DEFAULT_MESSAGE = "Сервис аккаунтов вернул ошибку";
+
     private final ObjectMapper objectMapper;
     private final ErrorDecoder defaultDecoder = new ErrorDecoder.Default();
 
@@ -19,15 +21,23 @@ public class AccountCallErrorDecoder implements ErrorDecoder {
 
     @Override
     public Exception decode(String methodKey, Response response) {
-        if (response.status() >= 400 && response.status() < 500 && response.body() != null) {
-            try (InputStream body = response.body().asInputStream()) {
-                ApiError apiError = objectMapper.readValue(body, ApiError.class);
-                return new AccountCallException(apiError.message(), HttpStatusCode.valueOf(response.status()));
-            } catch (IOException e) {
-                return new AccountCallException("Сервис аккаунтов вернул ошибку", HttpStatusCode.valueOf(response.status()));
-            }
+        int status = response.status();
+        if (status >= 400 && status < 500) {
+            return new AccountCallException(readMessage(response), HttpStatusCode.valueOf(status));
         }
         return defaultDecoder.decode(methodKey, response);
+    }
+
+    private String readMessage(Response response) {
+        if (response.body() == null) {
+            return DEFAULT_MESSAGE;
+        }
+        try (InputStream body = response.body().asInputStream()) {
+            ApiError apiError = objectMapper.readValue(body, ApiError.class);
+            return apiError != null && apiError.message() != null ? apiError.message() : DEFAULT_MESSAGE;
+        } catch (IOException | RuntimeException e) {
+            return DEFAULT_MESSAGE;
+        }
     }
 
 }

@@ -5,8 +5,11 @@ import jakarta.validation.constraints.NotNull;
 import ru.practicum.interaction.cash.enums.CashAction;
 
 import java.math.BigDecimal;
+import java.util.UUID;
 
 public record BalanceChangeRequest(
+
+        UUID operationId,
 
         String login,
 

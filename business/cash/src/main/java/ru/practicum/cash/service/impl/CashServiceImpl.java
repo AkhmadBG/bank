@@ -1,35 +1,28 @@
 package ru.practicum.cash.service.impl;
 
-import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
-import io.github.resilience4j.retry.annotation.Retry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import ru.practicum.cash.client.AccountsClient;
 import ru.practicum.cash.config.CurrentUserProvider;
-import ru.practicum.cash.entity.CashOperation;
-import ru.practicum.cash.repository.CashOperationRepository;
 import ru.practicum.cash.service.CashService;
-import ru.practicum.interaction.account.dto.BalanceChangeRequest;
 import ru.practicum.interaction.cash.dto.CashOperationRequest;
 import ru.practicum.interaction.cash.enums.CashAction;
-import ru.practicum.interaction.feignclient.AccountInternalFeignClient;
 import ru.practicum.interaction.kafka.NotificationMessage;
 import ru.practicum.interaction.kafka.NotificationPublisher;
 import ru.practicum.interaction.kafka.NotificationType;
 import ru.practicum.interaction.util.ApplicationUtil;
 
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class CashServiceImpl implements CashService {
 
-    private final AccountInternalFeignClient accountInternalFeignClient;
+    private final AccountsClient accountsClient;
     private final NotificationPublisher notificationPublisher;
-    private final CashOperationRepository cashOperationRepository;
+    private final CashOperationRecorder operationRecorder;
     private final CurrentUserProvider currentUserProvider;
 
     @Override
@@ -37,42 +30,20 @@ public class CashServiceImpl implements CashService {
         ApplicationUtil.validateAmount(request.amount());
         String login = currentUserProvider.getCurrentLogin();
 
-        changeBalance(login, request);
-
-        persistOperation(login, request);
-
-        sendNotificationBestEffort(login, request);
+        UUID operationId = UUID.randomUUID();
+        accountsClient.changeBalance(operationId, login, request.cashAction(), request.amount());
+        operationRecorder.record(login, request.cashAction(), request.amount());
+        sendNotification(login, request);
     }
 
-    @CircuitBreaker(name = "accounts")
-    @Retry(name = "accounts")
-    protected void changeBalance(String login, CashOperationRequest request) {
-        ApplicationUtil.validateAmount(request.amount());
-        accountInternalFeignClient.changeBalance(
-                new BalanceChangeRequest(login, request.cashAction(), request.amount())
-        );
-    }
+    private void sendNotification(String login, CashOperationRequest request) {
+        NotificationType type = request.cashAction() == CashAction.PUT
+                ? NotificationType.DEPOSIT : NotificationType.WITHDRAW;
+        String text = (type == NotificationType.DEPOSIT ? "Пополнение счёта на " : "Снятие со счёта ")
+                + request.amount();
 
-    @Transactional
-    protected void persistOperation(String login, CashOperationRequest request) {
-        ApplicationUtil.validateAmount(request.amount());
-        CashOperation operation = CashOperation.builder()
-                .login(login)
-                .cashOperationType(request.cashAction())
-                .amount(request.amount())
-                .operationDateTime(LocalDateTime.now())
-                .build();
-
-        cashOperationRepository.save(operation);
-    }
-
-    @CircuitBreaker(name = "notifications", fallbackMethod = "notificationFallback")
-    protected void sendNotificationBestEffort(String login, CashOperationRequest request) {
-        ApplicationUtil.validateAmount(request.amount());
-        NotificationType type = request.cashAction() == CashAction.PUT ? NotificationType.DEPOSIT : NotificationType.WITHDRAW;
-        String text = (type == NotificationType.DEPOSIT ? "Пополнение счёта на " : "Снятие со счёта ") + request.amount();
-
-        notificationPublisher.publish(new NotificationMessage(login, type, text, request.amount()));
+        notificationPublisher.publish(
+                new NotificationMessage(UUID.randomUUID(), login, type, text, request.amount()));
     }
 
 }
