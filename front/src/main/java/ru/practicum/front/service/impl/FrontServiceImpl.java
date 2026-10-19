@@ -10,16 +10,19 @@ import ru.practicum.front.exception.BankOperationException;
 import ru.practicum.front.feignclient.GatewayAccountFeignClient;
 import ru.practicum.front.feignclient.GatewayCashFeignClient;
 import ru.practicum.front.feignclient.GatewayTransferFeignClient;
+import ru.practicum.front.feignclient.NotificationsFeignClient;
 import ru.practicum.front.service.FrontService;
 import ru.practicum.interaction.account.dto.EditAccountRequest;
 import ru.practicum.interaction.cash.dto.CashOperationRequest;
 import ru.practicum.interaction.cash.enums.CashAction;
+import ru.practicum.interaction.front.dto.NotificationDto;
 import ru.practicum.interaction.front.dto.ResultData;
 import ru.practicum.interaction.transfer.dto.TransferOperationRequest;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.UUID;
 
 @Slf4j
 @Service
@@ -29,6 +32,7 @@ public class FrontServiceImpl implements FrontService {
     private final GatewayAccountFeignClient accountFeignClient;
     private final GatewayCashFeignClient cashFeignClient;
     private final GatewayTransferFeignClient transferFeignClient;
+    private final NotificationsFeignClient notificationsFeignClient;
 
     @Override
     public ResultData getAccount() {
@@ -77,11 +81,11 @@ public class FrontServiceImpl implements FrontService {
     }
 
     @Override
-    public ResultData editCash(int value, CashAction action) {
+    public ResultData editCash(UUID operationId, int value, CashAction action) {
         String error = null;
         String info = null;
         try {
-            doCashOperation(action, value);
+            doCashOperation(operationId, action, value);
             info = action == CashAction.PUT ? "Счёт пополнен" : "Средства сняты";
         } catch (BankOperationException e) {
             error = e.getMessage();
@@ -95,16 +99,16 @@ public class FrontServiceImpl implements FrontService {
     }
 
     @CircuitBreaker(name = "gateway")
-    protected void doCashOperation(CashAction action, int value) {
-        cashFeignClient.cashOperation(new CashOperationRequest(action, BigDecimal.valueOf(value)));
+    protected void doCashOperation(UUID operationId, CashAction action, int value) {
+        cashFeignClient.cashOperation(operationId,new CashOperationRequest(action, BigDecimal.valueOf(value)));
     }
 
     @Override
-    public ResultData transfer(int value, String recipientAccountLogin) {
+    public ResultData transfer(UUID operationId, int value, String recipientAccountLogin) {
         String error = null;
         String info = null;
         try {
-            doTransfer(value, recipientAccountLogin);
+            doTransfer(operationId, value, recipientAccountLogin);
             info = "Перевод выполнен";
         } catch (BankOperationException e) {
             log.warn("Ошибка операции: {}", e.getMessage());
@@ -120,10 +124,19 @@ public class FrontServiceImpl implements FrontService {
         return fetchCurrentState(error, info);
     }
 
+    @Override
+    public List<NotificationDto> getNotifications(String recipient) {
+        try {
+            return notificationsFeignClient.getNotifications(recipient);
+        } catch (Exception e) {
+            log.warn("Не удалось загрузить уведомления для пользователя {}", recipient, e);
+            return List.of();
+        }
+    }
+
     @CircuitBreaker(name = "gateway")
-    protected void doTransfer(int value, String recipientAccountLogin) {
-        transferFeignClient.transferOperation(
-                new TransferOperationRequest(recipientAccountLogin, BigDecimal.valueOf(value)));
+    protected void doTransfer(UUID operationId, int value, String recipientAccountLogin) {
+        transferFeignClient.transferOperation(operationId, new TransferOperationRequest(recipientAccountLogin, BigDecimal.valueOf(value)));
     }
 
     @CircuitBreaker(name = "gateway")

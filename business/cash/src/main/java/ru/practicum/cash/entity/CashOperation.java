@@ -6,6 +6,7 @@ import ru.practicum.interaction.cash.enums.CashAction;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Getter
 @Setter
@@ -21,6 +22,9 @@ public class CashOperation {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "cash_operation_id")
     private Long cashOperationId;
+
+    @Column(name = "operation_id")
+    private UUID operationId;
 
     @Column(name = "login", nullable = false)
     private String login;

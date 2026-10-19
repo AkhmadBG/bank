@@ -10,6 +10,7 @@ import ru.practicum.notifications.repository.NotificationRepository;
 import ru.practicum.notifications.service.NotificationService;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Slf4j
 @Service
@@ -36,6 +37,13 @@ public class NotificationServiceImpl implements NotificationService {
                 .build();
 
         notificationRepository.save(notification);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Notification> findByRecipient(String recipient) {
+        return notificationRepository
+                .findTop50ByRecipientOrderByCreatedAtDesc(recipient);
     }
 
 }

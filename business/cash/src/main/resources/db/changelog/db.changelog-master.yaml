@@ -14,3 +14,12 @@ databaseChangeLog:
         - sqlFile:
             path: 002-data.sql
             relativeToChangelogFile: true
+
+
+  - changeSet:
+      id: 003
+      author: user
+      changes:
+        - sqlFile:
+            path: 003-idempotency.sql
+            relativeToChangelogFile: true

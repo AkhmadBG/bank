@@ -3,13 +3,12 @@ package ru.practicum.cash.controller;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import ru.practicum.cash.service.CashService;
 import ru.practicum.interaction.apiinterface.CashOperations;
 import ru.practicum.interaction.cash.dto.CashOperationRequest;
+
+import java.util.UUID;
 
 @RestController
 @RequiredArgsConstructor
@@ -19,8 +18,9 @@ public class CashController implements CashOperations {
     private final CashService cashService;
 
     @PostMapping
-    public ResponseEntity<Void> cashOperation(@Valid @RequestBody CashOperationRequest cashOperationRequest) {
-        cashService.cashOperation(cashOperationRequest);
+    public ResponseEntity<Void> cashOperation(@RequestHeader("Idempotency-Key") UUID operationId,
+                                              @Valid @RequestBody CashOperationRequest request) {
+        cashService.cashOperation(operationId, request);
         return ResponseEntity.ok().build();
     }
 

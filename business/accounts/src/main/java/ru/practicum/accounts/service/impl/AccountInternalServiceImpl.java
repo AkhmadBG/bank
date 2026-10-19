@@ -1,23 +1,31 @@
 package ru.practicum.accounts.service.impl;
 
+import com.fasterxml.jackson.core.JacksonException;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.accounts.entity.Account;
+import ru.practicum.accounts.entity.OutboxEvent;
 import ru.practicum.accounts.entity.ProcessedOperation;
 import ru.practicum.accounts.exception.AccountNotFoundException;
 import ru.practicum.accounts.exception.IdempotencyConflictException;
 import ru.practicum.accounts.exception.InsufficientFundsException;
 import ru.practicum.accounts.repository.AccountRepository;
+import ru.practicum.accounts.repository.OutboxEventRepository;
 import ru.practicum.accounts.repository.ProcessedOperationRepository;
 import ru.practicum.accounts.service.AccountInternalService;
 import ru.practicum.interaction.account.dto.BalanceChangeRequest;
 import ru.practicum.interaction.account.dto.InternalTransferRequest;
 import ru.practicum.interaction.cash.enums.CashAction;
+import ru.practicum.interaction.kafka.NotificationMessage;
+import ru.practicum.interaction.kafka.NotificationType;
 import ru.practicum.interaction.util.ApplicationUtil;
+import tools.jackson.databind.ObjectMapper;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Slf4j
@@ -27,6 +35,8 @@ public class AccountInternalServiceImpl implements AccountInternalService {
 
     private final AccountRepository accountRepository;
     private final ProcessedOperationRepository processedOperationRepository;
+    private final OutboxEventRepository outboxEventRepository;
+    private final ObjectMapper objectMapper;
     private static final String KIND_TRANSFER = "TRANSFER";
 
     @Override
@@ -43,6 +53,11 @@ public class AccountInternalServiceImpl implements AccountInternalService {
 
         applyDelta(account, request.cashAction(), request.amount());
         accountRepository.save(account);
+
+        saveOutboxEvent(
+                request.operationId(),
+                createCashNotificationMessage(request)
+        );
     }
 
     @Override
@@ -71,6 +86,28 @@ public class AccountInternalServiceImpl implements AccountInternalService {
 
         accountRepository.save(sender);
         accountRepository.save(recipient);
+
+        saveOutboxEvent(
+                request.operationId(),
+                new NotificationMessage(
+                        UUID.randomUUID(),
+                        request.loginSender(),
+                        NotificationType.TRANSFER,
+                        "Перевод пользователю " + request.loginRecipient(),
+                        request.amount()
+                )
+        );
+
+        saveOutboxEvent(
+                request.operationId(),
+                new NotificationMessage(
+                        UUID.randomUUID(),
+                        request.loginRecipient(),
+                        NotificationType.TRANSFER,
+                        "Получен перевод от пользователя " + request.loginSender(),
+                        request.amount()
+                )
+        );
     }
 
     private boolean isRepeatedOperation(UUID operationId, String kind, String login,
@@ -97,6 +134,43 @@ public class AccountInternalServiceImpl implements AccountInternalService {
         } else {
             account.setBalance(account.getBalance().add(amount));
         }
+    }
+
+    private NotificationMessage createCashNotificationMessage(
+            BalanceChangeRequest request
+    ) {
+        NotificationType type = request.cashAction() == CashAction.PUT
+                ? NotificationType.DEPOSIT
+                : NotificationType.WITHDRAW;
+
+        String message = request.cashAction() == CashAction.PUT
+                ? "Пополнение счёта"
+                : "Снятие средств со счёта";
+
+        return new NotificationMessage(
+                UUID.randomUUID(),
+                request.login(),
+                type,
+                message,
+                request.amount()
+        );
+    }
+
+    private void saveOutboxEvent(
+            UUID operationId,
+            NotificationMessage message
+    ) {
+        OutboxEvent event = new OutboxEvent();
+        event.setEventId(UUID.randomUUID());
+        event.setOperationId(operationId);
+        event.setEventType(message.type().name());
+
+        event.setPayload(objectMapper.writeValueAsString(message));
+
+        event.setCreatedAt(LocalDateTime.now());
+        event.setAttempts(0);
+
+        outboxEventRepository.save(event);
     }
 
 }
