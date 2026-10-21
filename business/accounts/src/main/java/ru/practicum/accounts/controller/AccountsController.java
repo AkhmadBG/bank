@@ -1,5 +1,6 @@
 package ru.practicum.accounts.controller;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -22,7 +23,7 @@ public class AccountsController implements AccountOperations {
     }
 
     @PutMapping
-    public ResponseEntity<ResultData> editAccount(@RequestBody EditAccountRequest editAccountRequest) {
+    public ResponseEntity<ResultData> editAccount(@Valid @RequestBody EditAccountRequest editAccountRequest) {
         ResultData result = accountService.editAccount(editAccountRequest);
         return ResponseEntity.ok(result);
     }

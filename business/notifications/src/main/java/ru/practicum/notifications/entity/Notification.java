@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Getter
 @Setter
@@ -19,6 +20,9 @@ public class Notification {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "notification_id")
     private Long notificationId;
+
+    @Column(name = "event_id", unique = true)
+    private UUID eventId;
 
     @Column(name = "recipient", nullable = false, length = 150)
     private String recipient;

@@ -10,7 +10,16 @@ databaseChangeLog:
   - changeSet:
       id: 002
       author: user
+      context: "!test"
       changes:
         - sqlFile:
             path: 002-data.sql
+            relativeToChangelogFile: true
+
+  - changeSet:
+      id: 003
+      author: user
+      changes:
+        - sqlFile:
+            path: 003-notification-event-id.sql
             relativeToChangelogFile: true

@@ -6,6 +6,7 @@ import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Getter
 @Setter
@@ -21,6 +22,9 @@ public class TransferOperation {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "transfer_operation_id")
     private Long transferOperationId;
+
+    @Column(name = "operation_id")
+    private UUID operationId;
 
     @NotNull
     @Column(name = "login_recipient", nullable = false, length = 150)

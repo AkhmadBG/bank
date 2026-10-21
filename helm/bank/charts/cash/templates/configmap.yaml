@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cash-config
+  labels:
+    app: accounts
+data:
+  SPRING_KAFKA_BOOTSTRAP_SERVERS: {{ dig "kafka" "bootstrapServers" "kafka:9092" .Values.global | quote }}
+  SPRING_KAFKA_PRODUCER_ACKS: "all"
+  SPRING_KAFKA_PRODUCER_RETRIES: "10"

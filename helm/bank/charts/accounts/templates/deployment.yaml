@@ -32,10 +32,6 @@ spec:
               value: {{ .Values.keycloak.issuerUri | quote }}
             - name: SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI
               value: {{ .Values.keycloak.jwkSetUri | quote }}
-            - name: SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_TOKEN_URI
-              value: {{ .Values.keycloak.tokenUri | quote }}
-            - name: SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_NOTIFICATIONS_CLIENT_CLIENT_SECRET
-              valueFrom:
-                secretKeyRef:
-                  name: bank-app-secrets
-                  key: KEYCLOAK_ACCOUNTS_CLIENT_SECRET
+          envFrom:
+            - configMapRef:
+                name: accounts-config

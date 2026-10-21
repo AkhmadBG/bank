@@ -23,33 +23,49 @@ spring:
             client-id: cash-service
             client-secret: ${KEYCLOAK_CASH_CLIENT_SECRET}
             scope: internal
+  cloud:
+    openfeign:
+      client:
+        config:
+          default:
+            connect-timeout: 2000
+            read-timeout: 5000
+  kafka:
+    bootstrap-servers: kafka:9092
+    producer:
+      acks: all
+      retries: 10
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        enable.idempotence: true
+        max.block.ms: 3000
+        request.timeout.ms: 5000
+        delivery.timeout.ms: 10000
+        spring.json.add.type.headers: false
 
 resilience4j:
-  circuitbreaker:
-    instances:
-      accounts:
-        sliding-window-size: 10
-        failure-rate-threshold: 50
-        wait-duration-in-open-state: 10s
-        permitted-number-of-calls-in-half-open-state: 3
-      notifications:
-        sliding-window-size: 10
-        failure-rate-threshold: 50
-        wait-duration-in-open-state: 15s
   retry:
     instances:
       accounts:
         max-attempts: 3
         wait-duration: 500ms
-      notifications:
-        max-attempts: 2
-        wait-duration: 300ms
-  timelimiter:
+        retry-exceptions:
+          - feign.RetryableException
+          - feign.FeignException
+        ignore-exceptions:
+          - io.github.resilience4j.circuitbreaker.CallNotPermittedException
+  circuitbreaker:
     instances:
       accounts:
-        timeout-duration: 3s
-      notifications:
-        timeout-duration: 2s
+        sliding-window-type: COUNT_BASED
+        sliding-window-size: 10
+        minimum-number-of-calls: 5
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 10s
+        permitted-number-of-calls-in-half-open-state: 3
+        ignore-exceptions:
+          - feign.FeignException
 
 logging:
   level:
