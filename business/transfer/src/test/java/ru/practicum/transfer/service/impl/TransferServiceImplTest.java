@@ -12,12 +12,15 @@ import ru.practicum.interaction.transfer.dto.TransferOperationRequest;
 import ru.practicum.transfer.client.AccountsClient;
 import ru.practicum.transfer.config.CurrentUserProvider;
 import ru.practicum.transfer.exception.SelfTransferException;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 
 import java.math.BigDecimal;
 import java.util.UUID;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
@@ -28,6 +31,7 @@ class TransferServiceImplTest {
     private static final String SENDER = "sender";
     private static final String RECIPIENT = "recipient";
     private static final BigDecimal AMOUNT = new BigDecimal("100.50");
+    private MeterRegistry meterRegistry;
 
     @Mock
     private AccountsClient accountsClient;
@@ -42,7 +46,14 @@ class TransferServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        transferService = new TransferServiceImpl(accountsClient, currentUserProvider, operationRecorder);
+        meterRegistry = new SimpleMeterRegistry();
+
+        transferService = new TransferServiceImpl(
+                accountsClient,
+                currentUserProvider,
+                operationRecorder,
+                meterRegistry
+        );
     }
 
     @Test
@@ -145,6 +156,33 @@ class TransferServiceImplTest {
                 transferService.transfer(operationId, new TransferOperationRequest(RECIPIENT, AMOUNT)))
                 .isInstanceOf(RuntimeException.class)
                 .hasMessage("boom");
+    }
+
+    @Test
+    void transfer_shouldIncrementFailureMetric_whenAccountsClientFails() {
+        UUID operationId = UUID.randomUUID();
+
+        when(currentUserProvider.getCurrentLogin()).thenReturn(SENDER);
+
+        doThrow(new RuntimeException("boom"))
+                .when(accountsClient)
+                .transferBalance(operationId, SENDER, RECIPIENT, AMOUNT);
+
+        assertThatThrownBy(() ->
+                transferService.transfer(
+                        operationId,
+                        new TransferOperationRequest(RECIPIENT, AMOUNT)
+                )
+        ).isInstanceOf(RuntimeException.class)
+                .hasMessage("boom");
+
+        assertThat(
+                meterRegistry.counter(
+                        "transfer.failures",
+                        "sender", SENDER,
+                        "recipient", RECIPIENT
+                ).count()
+        ).isEqualTo(1.0);
     }
 
 }
