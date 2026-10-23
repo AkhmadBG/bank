@@ -1,5 +1,7 @@
+
 package ru.practicum.notifications.service.impl;
 
+import io.micrometer.core.instrument.MeterRegistry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -18,25 +20,35 @@ import java.util.List;
 public class NotificationServiceImpl implements NotificationService {
 
     private final NotificationRepository notificationRepository;
+    private final MeterRegistry meterRegistry;
 
     @Override
     @Transactional
     public void send(NotificationMessage message) {
-        if (message.eventId() != null && notificationRepository.existsByEventId(message.eventId())) {
-            log.info("Повторное уведомление {} пропущено", message.eventId());
-            return;
+        try {
+            if (message.eventId() != null
+                    && notificationRepository.existsByEventId(message.eventId())) {
+                log.info("Повторное уведомление {} пропущено", message.eventId());
+                return;
+            }
+
+            log.info("NOTIFICATION for {} [{}]: {}",
+                    message.login(), message.type(), message.message());
+
+            Notification notification = Notification.builder()
+                    .eventId(message.eventId())
+                    .recipient(message.login())
+                    .description(message.message())
+                    .createdAt(LocalDateTime.now())
+                    .build();
+
+            notificationRepository.save(notification);
+        } catch (RuntimeException e) {
+            meterRegistry.counter("notification.failures").increment();
+            log.error("Failed to process notification: eventId={}, recipient={}",
+                    message.eventId(), message.login(), e);
+            throw e;
         }
-
-        log.info("NOTIFICATION for {} [{}]: {}", message.login(), message.type(), message.message());
-
-        Notification notification = Notification.builder()
-                .eventId(message.eventId())
-                .recipient(message.login())
-                .description(message.message())
-                .createdAt(LocalDateTime.now())
-                .build();
-
-        notificationRepository.save(notification);
     }
 
     @Override
