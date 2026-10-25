@@ -1,4 +1,4 @@
-﻿apiVersion: apps/v1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: elasticsearch
@@ -26,13 +26,13 @@ spec:
             - name: xpack.security.enabled
               value: "false"
             - name: ES_JAVA_OPTS
-              value: "-Xms512m -Xmx512m"
+              value: "-Xms768m -Xmx768m"
           resources:
             requests:
               memory: 512Mi
               cpu: 250m
             limits:
-              memory: 1Gi
+              memory: 1536Mi
               cpu: "1"
           readinessProbe:
             httpGet:
@@ -55,3 +55,4 @@ spec:
     - name: http
       port: 9200
       targetPort: http
+

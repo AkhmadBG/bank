@@ -39,11 +39,12 @@ spec:
               cpu: 500m
               memory: 256Mi
           volumeMounts:
+            - name: dockercontainers
+              mountPath: /var/lib/docker/containers
+              readOnly: true
             - name: varlog
               mountPath: /var/log
               readOnly: true
-            - name: fluent-bit-state
-              mountPath: /var/log/fluent-bit-state
             - name: config
               mountPath: /fluent-bit/etc/fluent-bit.conf
               subPath: fluent-bit.conf
@@ -51,11 +52,12 @@ spec:
               mountPath: /fluent-bit/etc/parsers.conf
               subPath: parsers.conf
       volumes:
+        - name: dockercontainers
+          hostPath:
+            path: /var/lib/docker/containers
         - name: varlog
           hostPath:
             path: /var/log
-        - name: fluent-bit-state
-          emptyDir: {}
         - name: config
           configMap:
             name: fluent-bit-config
