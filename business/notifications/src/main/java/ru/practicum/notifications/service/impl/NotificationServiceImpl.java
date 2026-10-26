@@ -1,8 +1,7 @@
-
 package ru.practicum.notifications.service.impl;
 
+import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,11 +15,18 @@ import java.util.List;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class NotificationServiceImpl implements NotificationService {
 
     private final NotificationRepository notificationRepository;
-    private final MeterRegistry meterRegistry;
+    private final Counter notificationFailures;
+
+    public NotificationServiceImpl(
+            NotificationRepository notificationRepository,
+            MeterRegistry meterRegistry
+    ) {
+        this.notificationRepository = notificationRepository;
+        this.notificationFailures = meterRegistry.counter("notification.failures");
+    }
 
     @Override
     @Transactional
@@ -44,7 +50,7 @@ public class NotificationServiceImpl implements NotificationService {
 
             notificationRepository.save(notification);
         } catch (RuntimeException e) {
-            meterRegistry.counter("notification.failures").increment();
+            notificationFailures.increment();
             log.error("Failed to process notification: eventId={}, recipient={}",
                     message.eventId(), message.login(), e);
             throw e;

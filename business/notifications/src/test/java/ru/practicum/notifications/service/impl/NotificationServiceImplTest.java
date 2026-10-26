@@ -1,5 +1,9 @@
 package ru.practicum.notifications.service.impl;
 
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -23,8 +27,22 @@ class NotificationServiceImplTest {
     @Mock
     private NotificationRepository notificationRepository;
 
-    @InjectMocks
+    private SimpleMeterRegistry meterRegistry;
     private NotificationServiceImpl notificationService;
+
+    @BeforeEach
+    void setUp() {
+        meterRegistry = new SimpleMeterRegistry();
+        notificationService = new NotificationServiceImpl(
+                notificationRepository,
+                meterRegistry
+        );
+    }
+
+    @AfterEach
+    void tearDown() {
+        meterRegistry.close();
+    }
 
     @Test
     void shouldSaveNotificationWhenEventIsNew() {
@@ -183,6 +201,33 @@ class NotificationServiceImplTest {
         );
 
         verify(notificationRepository).save(any(Notification.class));
+    }
+
+    @Test
+    void shouldIncrementFailureMetricWhenRepositoryThrowsException() {
+        UUID eventId = UUID.randomUUID();
+
+        NotificationMessage message = new NotificationMessage(
+                eventId,
+                "test-user",
+                NotificationType.DEPOSIT,
+                "Пополнение счёта на 100.00",
+                null
+        );
+
+        when(notificationRepository.existsByEventId(eventId))
+                .thenThrow(new RuntimeException("Database unavailable"));
+
+        assertThrows(
+                RuntimeException.class,
+                () -> notificationService.send(message)
+        );
+
+        Counter counter = meterRegistry.find("notification.failures")
+                .counter();
+
+        assertNotNull(counter);
+        assertEquals(1.0, counter.count());
     }
 
 }
