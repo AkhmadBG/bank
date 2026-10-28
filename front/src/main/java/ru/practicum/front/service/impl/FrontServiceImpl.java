@@ -1,25 +1,18 @@
+
 package ru.practicum.front.service.impl;
 
 import feign.FeignException;
 import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
-import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import ru.practicum.front.exception.BankOperationException;
-import ru.practicum.front.feignclient.GatewayAccountFeignClient;
-import ru.practicum.front.feignclient.GatewayCashFeignClient;
-import ru.practicum.front.feignclient.GatewayTransferFeignClient;
 import ru.practicum.front.feignclient.NotificationsFeignClient;
 import ru.practicum.front.service.FrontService;
-import ru.practicum.interaction.account.dto.EditAccountRequest;
-import ru.practicum.interaction.cash.dto.CashOperationRequest;
 import ru.practicum.interaction.cash.enums.CashAction;
 import ru.practicum.interaction.front.dto.NotificationDto;
 import ru.practicum.interaction.front.dto.ResultData;
-import ru.practicum.interaction.transfer.dto.TransferOperationRequest;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
@@ -29,9 +22,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class FrontServiceImpl implements FrontService {
 
-    private final GatewayAccountFeignClient accountFeignClient;
-    private final GatewayCashFeignClient cashFeignClient;
-    private final GatewayTransferFeignClient transferFeignClient;
+    private final FrontGatewayService frontGatewayService;
     private final NotificationsFeignClient notificationsFeignClient;
 
     @Override
@@ -45,7 +36,7 @@ public class FrontServiceImpl implements FrontService {
         String info = null;
 
         try {
-            doEditAccount(name, birthdate);
+            frontGatewayService.editAccount(name, birthdate);
             info = "Данные сохранены";
 
         } catch (BankOperationException e) {
@@ -75,52 +66,94 @@ public class FrontServiceImpl implements FrontService {
         return fetchCurrentState(error, info);
     }
 
-    @CircuitBreaker(name = "gateway")
-    protected void doEditAccount(String name, LocalDate birthdate) {
-        accountFeignClient.editAccount(new EditAccountRequest(name, birthdate));
-    }
-
     @Override
-    public ResultData editCash(UUID operationId, int value, CashAction action) {
+    public ResultData editCash(
+            UUID operationId,
+            int value,
+            CashAction action
+    ) {
         String error = null;
         String info = null;
+
         try {
-            doCashOperation(operationId, action, value);
-            info = action == CashAction.PUT ? "Счёт пополнен" : "Средства сняты";
+            frontGatewayService.cashOperation(operationId, action, value);
+            info = action == CashAction.PUT
+                    ? "Счёт пополнен"
+                    : "Средства сняты";
+
         } catch (BankOperationException e) {
             error = e.getMessage();
+
         } catch (FeignException e) {
-            error = "Сервис обналичивания временно недоступен";
+            log.error(
+                    "Ошибка Feign при операции с наличными: status={}, method={}, url={}, body={}",
+                    e.status(),
+                    e.request().httpMethod(),
+                    e.request().url(),
+                    e.contentUTF8(),
+                    e
+            );
+
+            if (e.status() == 400) {
+                error = "Недостаточно средств на счёте или операция отклонена";
+            } else {
+                error = "Сервис для работы с наличными временно недоступен";
+            }
         } catch (CallNotPermittedException e) {
-            log.error("Circuit Breaker отклонил запрос: {}", e.getMessage());
+            log.error(
+                    "Circuit Breaker отклонил запрос: {}",
+                    e.getMessage()
+            );
             error = "Сервис обналичивания временно недоступен";
         }
+
         return fetchCurrentState(error, info);
     }
 
-    @CircuitBreaker(name = "gateway")
-    protected void doCashOperation(UUID operationId, CashAction action, int value) {
-        cashFeignClient.cashOperation(operationId,new CashOperationRequest(action, BigDecimal.valueOf(value)));
-    }
-
     @Override
-    public ResultData transfer(UUID operationId, int value, String recipientAccountLogin) {
+    public ResultData transfer(
+            UUID operationId,
+            int value,
+            String recipientAccountLogin
+    ) {
         String error = null;
         String info = null;
+
         try {
-            doTransfer(operationId, value, recipientAccountLogin);
+            frontGatewayService.transfer(
+                    operationId,
+                    value,
+                    recipientAccountLogin
+            );
             info = "Перевод выполнен";
+
         } catch (BankOperationException e) {
             log.warn("Ошибка операции: {}", e.getMessage());
             error = e.getMessage();
+
         } catch (FeignException e) {
-            log.error("Ошибка Feign: status={}, method={}, url={}",
-                    e.status(), e.request().httpMethod(), e.request().url());
-            error = "Сервис переводов временно недоступен";
+            log.error(
+                    "Ошибка Feign при переводе: status={}, method={}, url={}, body={}",
+                    e.status(),
+                    e.request().httpMethod(),
+                    e.request().url(),
+                    e.contentUTF8(),
+                    e
+            );
+
+            if (e.status() == 400) {
+                error = "Недостаточно средств на счёте или перевод отклонён";
+            } else {
+                error = "Сервис переводов временно недоступен";
+            }
         } catch (CallNotPermittedException e) {
-            log.error("Circuit Breaker отклонил запрос: {}", e.getMessage());
+            log.error(
+                    "Circuit Breaker отклонил запрос: {}",
+                    e.getMessage()
+            );
             error = "Сервис переводов временно недоступен";
         }
+
         return fetchCurrentState(error, info);
     }
 
@@ -129,29 +162,43 @@ public class FrontServiceImpl implements FrontService {
         try {
             return notificationsFeignClient.getNotifications(recipient);
         } catch (Exception e) {
-            log.warn("Не удалось загрузить уведомления для пользователя {}", recipient, e);
+            log.warn(
+                    "Не удалось загрузить уведомления для пользователя {}",
+                    recipient,
+                    e
+            );
             return List.of();
         }
     }
 
-    @CircuitBreaker(name = "gateway")
-    protected void doTransfer(UUID operationId, int value, String recipientAccountLogin) {
-        transferFeignClient.transferOperation(operationId, new TransferOperationRequest(recipientAccountLogin, BigDecimal.valueOf(value)));
-    }
-
-    @CircuitBreaker(name = "gateway")
-    protected ResultData fetchAccount() {
-        return accountFeignClient.getAccount().getBody();
-    }
-
     private ResultData fetchCurrentState(String error, String info) {
         try {
-            ResultData fresh = fetchAccount();
-            List<String> errors = error != null ? List.of(error) : null;
-            return new ResultData(fresh.name(), fresh.birthdate(), fresh.sum(), fresh.accounts(), errors, info);
+            ResultData fresh = frontGatewayService.fetchAccount();
+
+            List<String> errors = error != null
+                    ? List.of(error)
+                    : null;
+
+            return new ResultData(
+                    fresh.name(),
+                    fresh.birthdate(),
+                    fresh.sum(),
+                    fresh.accounts(),
+                    errors,
+                    info
+            );
+
         } catch (Exception e) {
             log.error("Не удалось получить данные аккаунта", e);
-            return new ResultData(null, null, null, List.of(), List.of("Не удалось загрузить данные аккаунта"), null);
+
+            return new ResultData(
+                    null,
+                    null,
+                    null,
+                    List.of(),
+                    List.of("Не удалось загрузить данные аккаунта"),
+                    null
+            );
         }
     }
 

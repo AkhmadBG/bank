@@ -33,3 +33,17 @@ spec:
                 secretKeyRef:
                   name: bank-app-secrets
                   key: KEYCLOAK_FRONT_CLIENT_SECRET
+          startupProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: http
+            periodSeconds: 5
+            timeoutSeconds: 2
+            failureThreshold: 30
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: http
+            periodSeconds: 5
+            timeoutSeconds: 2
+            failureThreshold: 3
