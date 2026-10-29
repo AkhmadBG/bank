@@ -18,6 +18,10 @@ spec:
         - name: notifications
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 8085
+              protocol: TCP
           env:
             - name: SPRING_DATASOURCE_URL
               value: "jdbc:postgresql://{{ .Values.database.host }}:{{ .Values.database.port }}/{{ .Values.database.name }}"

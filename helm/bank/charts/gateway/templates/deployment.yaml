@@ -21,6 +21,7 @@ spec:
           ports:
             - name: http
               containerPort: {{ .Values.containerPort }}
+              protocol: TCP
           startupProbe:
             httpGet:
               path: /actuator/health/readiness

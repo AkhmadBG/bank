@@ -39,6 +39,7 @@ spec:
           ports:
             - name: http
               containerPort: 8080
+              protocol: TCP
           volumeMounts:
             - name: keycloak-data
               mountPath: /opt/keycloak/data

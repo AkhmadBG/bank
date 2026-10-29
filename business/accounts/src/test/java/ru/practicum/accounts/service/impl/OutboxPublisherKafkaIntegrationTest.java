@@ -7,14 +7,15 @@ import org.apache.kafka.common.serialization.StringDeserializer;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
+import org.springframework.context.annotation.Bean;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.support.serializer.JsonDeserializer;
 import org.springframework.kafka.test.EmbeddedKafkaBroker;
 import org.springframework.kafka.test.context.EmbeddedKafka;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
+import org.springframework.test.annotation.DirtiesContext;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 import ru.practicum.accounts.service.AccountInternalService;
 import ru.practicum.interaction.account.dto.BalanceChangeRequest;
@@ -35,16 +36,22 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.awaitility.Awaitility.await;
 
 @SpringBootTest(properties = "KEYCLOAK_ACCOUNTS_CLIENT_SECRET=test-secret")
-@Testcontainers
 @EmbeddedKafka(
         partitions = 1,
         topics = KafkaTopics.NOTIFICATIONS,
         bootstrapServersProperty = "spring.kafka.bootstrap-servers")
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 class OutboxPublisherKafkaIntegrationTest {
 
-    @Container
-    @ServiceConnection
-    static PostgreSQLContainer postgres = new PostgreSQLContainer("postgres:16-alpine");
+    @TestConfiguration(proxyBeanMethods = false)
+    static class PostgresConfig {
+
+        @Bean
+        @ServiceConnection
+        PostgreSQLContainer postgres() {
+            return new PostgreSQLContainer("postgres:16-alpine");
+        }
+    }
 
     @Autowired
     EmbeddedKafkaBroker broker;

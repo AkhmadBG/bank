@@ -22,6 +22,7 @@ spec:
           ports:
             - name: http
               containerPort: {{ .Values.containerPort }}
+              protocol: TCP
           env:
             - name: SPRING_DATASOURCE_URL
               value: "jdbc:postgresql://{{ .Values.database.host }}:{{ .Values.database.port }}/{{ .Values.database.name }}"

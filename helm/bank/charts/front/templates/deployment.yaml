@@ -21,6 +21,7 @@ spec:
           ports:
             - name: http
               containerPort: {{ .Values.containerPort }}
+              protocol: TCP
           env:
             - name: SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_AUTHORIZATION_URI
               value: "http://localhost:8080/realms/bank/protocol/openid-connect/auth"
