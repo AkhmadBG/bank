@@ -1,5 +1,9 @@
 package ru.practicum.notifications.service.impl;
 
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -23,8 +27,22 @@ class NotificationServiceImplTest {
     @Mock
     private NotificationRepository notificationRepository;
 
-    @InjectMocks
+    private SimpleMeterRegistry meterRegistry;
     private NotificationServiceImpl notificationService;
+
+    @BeforeEach
+    void setUp() {
+        meterRegistry = new SimpleMeterRegistry();
+        notificationService = new NotificationServiceImpl(
+                notificationRepository,
+                meterRegistry
+        );
+    }
+
+    @AfterEach
+    void tearDown() {
+        meterRegistry.close();
+    }
 
     @Test
     void shouldSaveNotificationWhenEventIsNew() {
@@ -182,6 +200,110 @@ class NotificationServiceImplTest {
                 () -> notificationService.send(message)
         );
 
+        verify(notificationRepository).save(any(Notification.class));
+    }
+
+    @Test
+    void shouldIncrementFailureMetricWhenRepositoryThrowsException() {
+        UUID eventId = UUID.randomUUID();
+
+        NotificationMessage message = new NotificationMessage(
+                eventId,
+                "test-user",
+                NotificationType.DEPOSIT,
+                "Пополнение счёта на 100.00",
+                null
+        );
+
+        when(notificationRepository.existsByEventId(eventId))
+                .thenThrow(new RuntimeException("Database unavailable"));
+
+        assertThrows(
+                RuntimeException.class,
+                () -> notificationService.send(message)
+        );
+
+        Counter counter = meterRegistry.find("notification.failures")
+                .counter();
+
+        assertNotNull(counter);
+        assertEquals(1.0, counter.count());
+    }
+
+    @Test
+    void shouldSaveNotificationsWithDifferentEventIds() {
+        UUID firstEventId = UUID.randomUUID();
+        UUID secondEventId = UUID.randomUUID();
+
+        NotificationMessage firstMessage = new NotificationMessage(
+                firstEventId,
+                "test-user",
+                NotificationType.DEPOSIT,
+                "Пополнение на 100.00",
+                null
+        );
+
+        NotificationMessage secondMessage = new NotificationMessage(
+                secondEventId,
+                "test-user",
+                NotificationType.DEPOSIT,
+                "Пополнение на 200.00",
+                null
+        );
+
+        when(notificationRepository.existsByEventId(firstEventId))
+                .thenReturn(false);
+        when(notificationRepository.existsByEventId(secondEventId))
+                .thenReturn(false);
+
+        notificationService.send(firstMessage);
+        notificationService.send(secondMessage);
+
+        ArgumentCaptor<Notification> captor =
+                ArgumentCaptor.forClass(Notification.class);
+
+        verify(notificationRepository, times(2)).save(captor.capture());
+
+        assertEquals(
+                firstEventId,
+                captor.getAllValues().get(0).getEventId()
+        );
+        assertEquals(
+                secondEventId,
+                captor.getAllValues().get(1).getEventId()
+        );
+    }
+
+    @Test
+    void shouldIncrementFailureMetricWhenSavingNotificationFails() {
+        UUID eventId = UUID.randomUUID();
+
+        NotificationMessage message = new NotificationMessage(
+                eventId,
+                "test-user",
+                NotificationType.DEPOSIT,
+                "Пополнение счёта на 100.00",
+                null
+        );
+
+        when(notificationRepository.existsByEventId(eventId))
+                .thenReturn(false);
+
+        when(notificationRepository.save(any(Notification.class)))
+                .thenThrow(new RuntimeException("Database unavailable"));
+
+        assertThrows(
+                RuntimeException.class,
+                () -> notificationService.send(message)
+        );
+
+        Counter counter = meterRegistry.find("notification.failures")
+                .counter();
+
+        assertNotNull(counter);
+        assertEquals(1.0, counter.count());
+
+        verify(notificationRepository).existsByEventId(eventId);
         verify(notificationRepository).save(any(Notification.class));
     }
 

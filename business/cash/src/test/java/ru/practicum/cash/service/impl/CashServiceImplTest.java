@@ -1,5 +1,8 @@
 package ru.practicum.cash.service.impl;
 
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -19,6 +22,7 @@ import java.util.UUID;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -31,15 +35,26 @@ class CashServiceImplTest {
 
     @Mock
     private CashOperationRecorder operationRecorder;
+    private CashServiceImpl cashService;
+    private MeterRegistry meterRegistry;
 
     @Mock
     private CurrentUserProvider currentUserProvider;
 
-    private CashServiceImpl cashService;
-
     @BeforeEach
     void setUp() {
-        cashService = new CashServiceImpl(accountsClient, operationRecorder, currentUserProvider);
+        meterRegistry = new SimpleMeterRegistry();
+        cashService = new CashServiceImpl(
+                accountsClient,
+                operationRecorder,
+                currentUserProvider,
+                meterRegistry
+        );
+    }
+
+    @AfterEach
+    void tearDown() {
+        meterRegistry.close();
     }
 
     @Test
@@ -173,6 +188,57 @@ class CashServiceImplTest {
                 .hasMessage("Recording failed");
 
         verify(accountsClient).changeBalance(operationId, LOGIN, CashAction.PUT, amount);
+    }
+
+    @Test
+    void shouldIncrementWithdrawalFailureMetricWhenGetFails() {
+        UUID operationId = UUID.randomUUID();
+        BigDecimal amount = new BigDecimal("50.00");
+
+        when(currentUserProvider.getCurrentLogin()).thenReturn(LOGIN);
+        doThrow(new RuntimeException("Accounts service unavailable"))
+                .when(accountsClient)
+                .changeBalance(operationId, LOGIN, CashAction.GET, amount);
+
+        assertThatThrownBy(() ->
+                cashService.cashOperation(
+                        operationId,
+                        new CashOperationRequest(CashAction.GET, amount)
+                )
+        ).isInstanceOf(RuntimeException.class);
+
+        assertThat(
+                meterRegistry.get("cash.withdrawal.failures")
+                        .tag("login", LOGIN)
+                        .counter()
+                        .count()
+        ).isEqualTo(1.0);
+
+        verifyNoInteractions(operationRecorder);
+    }
+
+    @Test
+    void shouldNotIncrementWithdrawalFailureMetricWhenPutFails() {
+        UUID operationId = UUID.randomUUID();
+        BigDecimal amount = new BigDecimal("50.00");
+
+        when(currentUserProvider.getCurrentLogin()).thenReturn(LOGIN);
+        doThrow(new RuntimeException("Accounts service unavailable"))
+                .when(accountsClient)
+                .changeBalance(operationId, LOGIN, CashAction.PUT, amount);
+
+        assertThatThrownBy(() ->
+                cashService.cashOperation(
+                        operationId,
+                        new CashOperationRequest(CashAction.PUT, amount)
+                )
+        ).isInstanceOf(RuntimeException.class);
+
+        assertThat(
+                meterRegistry.find("cash.withdrawal.failures").counter()
+        ).isNull();
+
+        verifyNoInteractions(operationRecorder);
     }
 
 }

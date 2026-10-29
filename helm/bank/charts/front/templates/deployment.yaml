@@ -21,6 +21,7 @@ spec:
           ports:
             - name: http
               containerPort: {{ .Values.containerPort }}
+              protocol: TCP
           env:
             - name: SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_AUTHORIZATION_URI
               value: "http://localhost:8080/realms/bank/protocol/openid-connect/auth"
@@ -33,3 +34,17 @@ spec:
                 secretKeyRef:
                   name: bank-app-secrets
                   key: KEYCLOAK_FRONT_CLIENT_SECRET
+          startupProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: http
+            periodSeconds: 5
+            timeoutSeconds: 2
+            failureThreshold: 30
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: http
+            periodSeconds: 5
+            timeoutSeconds: 2
+            failureThreshold: 3

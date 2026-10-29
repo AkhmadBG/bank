@@ -1,0 +1,59 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-config
+data:
+  prometheus.yml: |
+    global:
+      scrape_interval: 15s
+
+    rule_files:
+      - /etc/prometheus/alerts.yml
+
+    scrape_configs:
+      - job_name: prometheus
+        static_configs:
+          - targets: ["localhost:9090"]
+
+      - job_name: spring-boot
+        metrics_path: /actuator/prometheus
+        static_configs:
+          - targets:
+              - accounts:8082
+              - cash:8083
+              - transfer:8084
+              - notifications:8085
+              - gateway:8081
+              - front:8086
+
+  alerts.yml: |
+    groups:
+      - name: bank-alerts
+        rules:
+          - alert: CashWithdrawalFailures
+            expr: increase(cash_withdrawal_failures_total[5m]) > 0
+            for: 1m
+            labels:
+              severity: warning
+            annotations:
+              summary: "Ошибки снятия наличных"
+              description: "За последние 5 минут зарегистрированы ошибки снятия наличных."
+
+          - alert: TransferFailures
+            expr: increase(transfer_failures_total[5m]) > 0
+            for: 1m
+            labels:
+              severity: warning
+            annotations:
+              summary: "Ошибки переводов"
+              description: "За последние 5 минут зарегистрированы ошибки переводов."
+
+          - alert: BankServiceDown
+            expr: up{job="spring-boot"} == 0
+            for: 2m
+            labels:
+              severity: critical
+            annotations:
+              summary: "Недоступен сервис банка"
+              description: "Prometheus не может получить метрики сервиса {{ "{{" }} $labels.instance {{ "}}" }}."
+

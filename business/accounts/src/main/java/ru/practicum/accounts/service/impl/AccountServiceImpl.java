@@ -6,10 +6,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.accounts.config.CurrentUserProvider;
 import ru.practicum.accounts.entity.Account;
+import ru.practicum.accounts.entity.OutboxEvent;
 import ru.practicum.accounts.exception.AccountNotFoundException;
 import ru.practicum.accounts.exception.InvalidAgeException;
 import ru.practicum.accounts.mapper.AccountMapper;
 import ru.practicum.accounts.repository.AccountRepository;
+import ru.practicum.accounts.repository.OutboxEventRepository;
 import ru.practicum.accounts.service.AccountService;
 import ru.practicum.interaction.account.dto.EditAccountRequest;
 import ru.practicum.interaction.account.dto.UserAccountDto;
@@ -17,8 +19,10 @@ import ru.practicum.interaction.front.dto.ResultData;
 import ru.practicum.interaction.kafka.NotificationMessage;
 import ru.practicum.interaction.kafka.NotificationPublisher;
 import ru.practicum.interaction.kafka.NotificationType;
+import tools.jackson.databind.ObjectMapper;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.Period;
 import java.util.List;
 import java.util.UUID;
@@ -33,7 +37,8 @@ public class AccountServiceImpl implements AccountService {
     private final AccountRepository accountRepository;
     private final AccountMapper accountMapper;
     private final CurrentUserProvider currentUserProvider;
-    private final NotificationPublisher notificationPublisher;
+    private final OutboxEventRepository outboxEventRepository;
+    private final ObjectMapper objectMapper;
 
     @Override
     @Transactional(readOnly = true)
@@ -56,11 +61,36 @@ public class AccountServiceImpl implements AccountService {
         account.setBirthdate(request.birthdate());
         accountRepository.save(account);
 
-        sendNotificationBestEffort(login, request);
+        saveAccountUpdateOutboxEvent(login);
 
         List<UserAccountDto> others = findOtherAccounts(login);
         return accountMapper.toResultData(account, others);
     }
+
+    private void saveAccountUpdateOutboxEvent(String login) {
+        UUID eventId = UUID.randomUUID();
+
+        NotificationMessage message = new NotificationMessage(
+                eventId,
+                login,
+                NotificationType.ACCOUNT_UPDATE,
+                "Данные аккаунта изменены",
+                null
+        );
+
+        OutboxEvent event = new OutboxEvent();
+        event.setEventId(eventId);
+
+        event.setOperationId(eventId);
+
+        event.setEventType(NotificationType.ACCOUNT_UPDATE.name());
+        event.setPayload(objectMapper.writeValueAsString(message));
+        event.setCreatedAt(LocalDateTime.now());
+        event.setAttempts(0);
+
+        outboxEventRepository.save(event);
+    }
+
 
     private Account findByLoginOrThrow(String login) {
         return accountRepository.findByLogin(login)
@@ -76,15 +106,6 @@ public class AccountServiceImpl implements AccountService {
     private void validateAge(LocalDate birthdate) {
         if (birthdate == null || Period.between(birthdate, LocalDate.now()).getYears() < MIN_AGE) {
             throw new InvalidAgeException();
-        }
-    }
-
-    private void sendNotificationBestEffort(String login, EditAccountRequest request) {
-        try {
-            notificationPublisher.publish(new NotificationMessage(
-                    UUID.randomUUID(), login, NotificationType.ACCOUNT_UPDATE, "Данные аккаунта изменены", null));
-        } catch (Exception e) {
-            log.warn("Не удалось отправить уведомление для {}: {}", login, e.getMessage());
         }
     }
 

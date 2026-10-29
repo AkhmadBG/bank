@@ -1,6 +1,7 @@
 package ru.practicum.notifications.service.impl;
 
-import lombok.RequiredArgsConstructor;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -14,29 +15,46 @@ import java.util.List;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class NotificationServiceImpl implements NotificationService {
 
     private final NotificationRepository notificationRepository;
+    private final Counter notificationFailures;
+
+    public NotificationServiceImpl(
+            NotificationRepository notificationRepository,
+            MeterRegistry meterRegistry
+    ) {
+        this.notificationRepository = notificationRepository;
+        this.notificationFailures = meterRegistry.counter("notification.failures");
+    }
 
     @Override
     @Transactional
     public void send(NotificationMessage message) {
-        if (message.eventId() != null && notificationRepository.existsByEventId(message.eventId())) {
-            log.info("Повторное уведомление {} пропущено", message.eventId());
-            return;
+        try {
+            if (message.eventId() != null
+                    && notificationRepository.existsByEventId(message.eventId())) {
+                log.info("Повторное уведомление {} пропущено", message.eventId());
+                return;
+            }
+
+            log.info("NOTIFICATION for {} [{}]: {}",
+                    message.login(), message.type(), message.message());
+
+            Notification notification = Notification.builder()
+                    .eventId(message.eventId())
+                    .recipient(message.login())
+                    .description(message.message())
+                    .createdAt(LocalDateTime.now())
+                    .build();
+
+            notificationRepository.save(notification);
+        } catch (RuntimeException e) {
+            notificationFailures.increment();
+            log.error("Failed to process notification: eventId={}, recipient={}",
+                    message.eventId(), message.login(), e);
+            throw e;
         }
-
-        log.info("NOTIFICATION for {} [{}]: {}", message.login(), message.type(), message.message());
-
-        Notification notification = Notification.builder()
-                .eventId(message.eventId())
-                .recipient(message.login())
-                .description(message.message())
-                .createdAt(LocalDateTime.now())
-                .build();
-
-        notificationRepository.save(notification);
     }
 
     @Override

@@ -135,18 +135,46 @@ class AccountInternalServicePostgresIntegrationTest {
 
     @Test
     void parallelRequestsWithSameKeyApplyOnce() throws Exception {
-        BalanceChangeRequest request = withdraw(UUID.randomUUID(), "petrov", "10.00");
+        BalanceChangeRequest request =
+                withdraw(UUID.randomUUID(), "petrov", "10.00");
+
         ExecutorService pool = Executors.newFixedThreadPool(8);
+        List<Future<?>> futures = new java.util.ArrayList<>();
 
-        List<Future<?>> futures = IntStream.range(0, 8)
-                .mapToObj(i -> pool.submit(() -> service.changeBalance(request)))
-                .collect(Collectors.toList());
-        for (Future<?> f : futures) {
-            f.get(30, TimeUnit.SECONDS);
+        boolean completedSuccessfully = false;
+
+        try {
+            futures = IntStream.range(0, 8)
+                    .mapToObj(i -> pool.submit(
+                            () -> service.changeBalance(request)
+                    ))
+                    .collect(Collectors.toList());
+
+            for (Future<?> future : futures) {
+                future.get(30, TimeUnit.SECONDS);
+            }
+
+            completedSuccessfully = true;
+        } finally {
+            if (!completedSuccessfully) {
+                for (Future<?> future : futures) {
+                    future.cancel(true);
+                }
+                pool.shutdownNow();
+            } else {
+                pool.shutdown();
+            }
+
+            if (!pool.awaitTermination(5, TimeUnit.SECONDS)) {
+                pool.shutdownNow();
+                if (!pool.awaitTermination(5, TimeUnit.SECONDS)) {
+                    Thread.currentThread().interrupt();
+                }
+            }
         }
-        pool.shutdown();
 
-        assertThat(balanceOf("petrov")).isEqualByComparingTo("9990.00");
+        assertThat(balanceOf("petrov"))
+                .isEqualByComparingTo("9990.00");
         assertThat(processedCount()).isEqualTo(1);
         assertThat(outboxCount()).isEqualTo(1);
     }
